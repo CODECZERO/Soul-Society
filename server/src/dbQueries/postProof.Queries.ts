@@ -44,7 +44,11 @@ const verifyMissionProof = async (
     // But for now, we just update the proof status.
 
     await post.save();
-    return { success: true, message: `Proof ${status.toLowerCase()} successfully` };
+    return {
+      success: true,
+      message: `Proof ${status.toLowerCase()} successfully`,
+      proof: post.Proofs[proofIndex]
+    };
   } catch (error) {
     console.error('Error verifying proof:', error);
     throw error;

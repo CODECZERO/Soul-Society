@@ -157,27 +157,77 @@ export async function getLatestData(privateKey: string, contractId?: string) {
   }
 }
 
-// Example usage
-async function main() {
+export async function registerMission(captainKey: string, missionId: string, title: string, dangerLevel: number) {
   try {
-    console.log('=== Storing Data ===');
-    // Example usage - replace with actual values from environment or auth context
-    /*
-    await saveContractWithWallet({
-      privateKey: process.env.NGO_PRIVATE_KEY || "", 
-      amount: 1000,
-      cid: "example_cid_123",
-      prevTxn: "example_prev_txn"
-    });
+    const contractId = process.env.MISSION_REGISTRY_CONTRACT_ID;
+    if (!contractId) {
+      throw new Error('MISSION_REGISTRY_CONTRACT_ID is not defined');
+    }
 
-    console.log("\n=== Getting Latest Data ===");
-    const latestData = await getLatestData(process.env.NGO_PRIVATE_KEY || "");
-    console.log("Latest data:", latestData);
-    */
+    const contract = new StellarSdk.Contract(contractId);
+    const sourceKeypair = StellarSdk.Keypair.fromSecret(captainKey);
+    const accountId = sourceKeypair.publicKey();
+    const account = await server.getAccount(accountId);
+
+    const transaction = new StellarSdk.TransactionBuilder(account, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: StellarSdk.Networks.TESTNET,
+    })
+      .setTimeout(30)
+      .addOperation(
+        contract.call(
+          'register_mission',
+          StellarSdk.nativeToScVal(accountId, { type: 'address' }),
+          StellarSdk.nativeToScVal(missionId, { type: 'string' }),
+          StellarSdk.nativeToScVal(title, { type: 'string' }),
+          StellarSdk.nativeToScVal(dangerLevel, { type: 'u32' })
+        )
+      )
+      .build();
+
+    const preparedTx = await server.prepareTransaction(transaction);
+    preparedTx.sign(sourceKeypair);
+    const result = await server.sendTransaction(preparedTx);
+    return result;
   } catch (error) {
-    console.error('Error in main function:', error);
+    console.error('Error registering mission:', error);
+    throw error;
   }
 }
 
-// Uncomment to run the example
-// main().catch(console.error);
+export async function sealMissionProof(validatorKey: string, missionId: string, proofCid: string) {
+  try {
+    const contractId = process.env.MISSION_REGISTRY_CONTRACT_ID;
+    if (!contractId) {
+      throw new Error('MISSION_REGISTRY_CONTRACT_ID is not defined');
+    }
+
+    const contract = new StellarSdk.Contract(contractId);
+    const sourceKeypair = StellarSdk.Keypair.fromSecret(validatorKey);
+    const accountId = sourceKeypair.publicKey();
+    const account = await server.getAccount(accountId);
+
+    const transaction = new StellarSdk.TransactionBuilder(account, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: StellarSdk.Networks.TESTNET,
+    })
+      .setTimeout(30)
+      .addOperation(
+        contract.call(
+          'seal_proof',
+          StellarSdk.nativeToScVal(accountId, { type: 'address' }),
+          StellarSdk.nativeToScVal(missionId, { type: 'string' }),
+          StellarSdk.nativeToScVal(proofCid, { type: 'string' })
+        )
+      )
+      .build();
+
+    const preparedTx = await server.prepareTransaction(transaction);
+    preparedTx.sign(sourceKeypair);
+    const result = await server.sendTransaction(preparedTx);
+    return result;
+  } catch (error) {
+    console.error('Error sealing mission proof:', error);
+    throw error;
+  }
+}

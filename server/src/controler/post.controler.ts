@@ -7,6 +7,7 @@ import { getPosts, savePostData } from '../dbQueries/post.Queries.js';
 import { getDonationRelatedToPost } from '../dbQueries/donation.Queries.js';
 import { getXLMtoINRRate } from '../util/exchangeRate.util.js';
 import { ImgFormater } from '../util/ipfs.uitl.js';
+import { registerMission } from '../services/stellar/smartContract.handler.stellar.js';
 
 export interface PostData {
   Title: string;
@@ -28,6 +29,7 @@ interface RequestK extends Request {
     email: string;
     walletAddr: string;
     NgoName: string;
+    privateKey?: string;
   };
 }
 
@@ -123,6 +125,27 @@ const createPost = AsyncHandler(async (req: RequestK, res: Response) => {
   const saveData = await savePostData(postData);
   if (!saveData) {
     throw new ApiError(500, 'Failed to save post data');
+  }
+
+  // Expansion 3.1: Register on Mission Registry (On-Chain)
+  try {
+    const dangerLevelMap: Record<string, number> = { Low: 1, Medium: 2, High: 3, Extreme: 4 };
+    const numericDanger = dangerLevelMap[postData.DangerLevel || 'Low'] || 1;
+
+    // Use user's private key if available, otherwise fallback
+    const privateKey = req.user.privateKey || process.env.DEFAULT_CAPTAIN_S_KEY;
+    if (privateKey) {
+      await registerMission(
+        privateKey,
+        saveData._id.toString(),
+        postData.Title,
+        numericDanger
+      );
+      console.log(`📜 Mission ${saveData._id} registered on-chain.`);
+    }
+  } catch (chainError) {
+    console.warn('On-chain registration failed:', chainError);
+    // We don't throw here to ensure DB consistency is prioritized for the hackathon
   }
 
   return res.status(200).json(new ApiResponse(200, saveData, 'Post created successfully'));

@@ -4,6 +4,8 @@ import { ApiResponse } from '../util/apiResponse.util.js';
 import { submitMissionProof, verifyMissionProof } from '../dbQueries/postProof.Queries.js';
 import { ApiError } from '../util/apiError.util.js';
 
+import { sealMissionProof } from '../services/stellar/smartContract.handler.stellar.js';
+
 const submitProof = AsyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { submitter, cid } = req.body;
@@ -28,7 +30,22 @@ const verifyProof = AsyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, 'Invalid status. Must be Approved or Rejected');
   }
 
-  const result = await verifyMissionProof(id, proofIndex, status);
+  const result: any = await verifyMissionProof(id, proofIndex, status);
+
+  // Expansion 3.1: Seal proof on-chain if approved
+  if (status === 'Approved') {
+    try {
+      const validatorKey = process.env.CENTRAL_REGISTRY_VALIDATOR_KEY;
+      const proof = result.proof;
+      if (validatorKey && proof?.Cid) { // Note: Cid is capitalized in the DB model
+        await sealMissionProof(validatorKey, id, proof.Cid);
+        console.log(`🛡️ Tactical proof for mission ${id} sealed on-chain.`);
+      }
+    } catch (chainError) {
+      console.warn('On-chain sealing failed:', chainError);
+    }
+  }
+
   return res.status(200).json(new ApiResponse(200, null, result.message));
 });
 
