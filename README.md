@@ -85,13 +85,13 @@ This project is participating in the Stellar Journey to Mastery program. Track o
 - [x] **Testing**: Minimum 3 tests passing.
 - [x] **Documentation**: Complete README and a 1-minute demo video.
 
-### 🟢 Level 4 - Green Belt
+### 🟢 Level 4 - Green Belt [COMPLETED]
 **Focus**: Advanced contract patterns and production readiness.
-- [ ] **Contracts**: Inter-contract calls working (if applicable).
-- [ ] **Tokens**: Custom token creation or liquidity pool mechanics.
-- [ ] **Real-time**: Advanced event streaming.
-- [ ] **DevOps**: CI/CD pipeline setup (GitHub Actions/CircleCI/etc).
-- [ ] **Design**: Mobile responsive design.
+- [x] **Contracts**: Inter-contract calls working (Mission Registry auto-mints Soul Badges).
+- [x] **Tokens**: Custom token creation (Reiatsu Token - RA).
+- [x] **Real-time**: Advanced event streaming (Seireitei Alert System).
+- [x] **DevOps**: CI/CD pipeline setup (GitHub Actions).
+- [x] **Design**: Mobile responsive design.
 
 ---
 

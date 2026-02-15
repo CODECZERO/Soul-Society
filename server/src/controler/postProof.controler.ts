@@ -37,9 +37,9 @@ const verifyProof = AsyncHandler(async (req: Request, res: Response) => {
     try {
       const validatorKey = process.env.CENTRAL_REGISTRY_VALIDATOR_KEY;
       const proof = result.proof;
-      if (validatorKey && proof?.Cid) { // Note: Cid is capitalized in the DB model
-        await sealMissionProof(validatorKey, id, proof.Cid);
-        console.log(`🛡️ Tactical proof for mission ${id} sealed on-chain.`);
+      if (validatorKey && proof?.Cid && proof?.Submitter) {
+        await sealMissionProof(validatorKey, proof.Submitter, id, proof.Cid);
+        console.log(`🛡️ Tactical proof for mission ${id} sealed on-chain for reaper ${proof.Submitter}.`);
       }
     } catch (chainError) {
       console.warn('On-chain sealing failed:', chainError);

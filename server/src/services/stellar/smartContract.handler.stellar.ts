@@ -195,7 +195,7 @@ export async function registerMission(captainKey: string, missionId: string, tit
   }
 }
 
-export async function sealMissionProof(validatorKey: string, missionId: string, proofCid: string) {
+export async function sealMissionProof(validatorKey: string, reaperAddress: string, missionId: string, proofCid: string) {
   try {
     const contractId = process.env.MISSION_REGISTRY_CONTRACT_ID;
     if (!contractId) {
@@ -216,6 +216,7 @@ export async function sealMissionProof(validatorKey: string, missionId: string, 
         contract.call(
           'seal_proof',
           StellarSdk.nativeToScVal(accountId, { type: 'address' }),
+          StellarSdk.nativeToScVal(reaperAddress, { type: 'address' }),
           StellarSdk.nativeToScVal(missionId, { type: 'string' }),
           StellarSdk.nativeToScVal(proofCid, { type: 'string' })
         )

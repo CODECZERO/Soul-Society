@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
+import { Toaster } from "@/components/ui/toaster"
+import { RealTimeAlerts } from "@/components/bleach/real-time-alerts"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,12 +30,14 @@ export default function RootLayout({
       <body className={`font-sans antialiased`} suppressHydrationWarning>
         <ReduxProvider>
           <WalletStateManager />
+          <RealTimeAlerts />
           <NGOAuthProvider>
             <AuthGuard>
               {children}
               <Analytics />
             </AuthGuard>
           </NGOAuthProvider>
+          <Toaster />
         </ReduxProvider>
       </body>
     </html>
