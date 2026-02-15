@@ -522,6 +522,10 @@ class ApiService {
   async getDonorStats(walletAddr: string): Promise<ApiResponse<any>> {
     return this.request(`/stats/donor/${walletAddr}`);
   }
+
+  async getUserProfile(walletAddr: string): Promise<ApiResponse<any>> {
+    return this.request(`/user-profile/${walletAddr}`);
+  }
 }
 
 // Create singleton instance
@@ -553,4 +557,5 @@ export const {
   getStats,
   getLeaderboard,
   getDonorStats,
+  getUserProfile,
 } = apiService;

@@ -22,13 +22,11 @@ app.use(
   })
 );
 
-// Request logging middleware
+// Request logging middleware (Cleaned for production)
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  console.log('Content-Type:', req.headers['content-type']);
-  console.log('Content-Length:', req.headers['content-length']);
-  console.log('User-Agent:', req.headers['user-agent']);
-  console.log('Cookies:', req.headers.cookie);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  }
   next();
 });
 

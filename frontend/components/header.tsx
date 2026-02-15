@@ -92,6 +92,11 @@ export function Header() {
               Infusions
             </Link>
           )}
+          {walletConnected && publicKey && (
+            <Link href={`/profile/${publicKey}`} className="text-orange-600 hover:text-orange-400 transition font-black uppercase italic tracking-widest text-[10px] skew-x-[12deg]">
+              Mastery
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-3">

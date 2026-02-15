@@ -70,8 +70,8 @@ export function TaskCard({ task }: TaskCardProps) {
 
         {task.DangerLevel && (
           <div className={`absolute bottom-4 right-4 px-2 py-1 font-black italic uppercase text-[8px] tracking-widest skew-x-[-12deg] flex items-center gap-1 ${task.DangerLevel === "Extreme" ? "bg-red-600 animate-pulse" :
-              task.DangerLevel === "High" ? "bg-red-500" :
-                task.DangerLevel === "Medium" ? "bg-yellow-600" : "bg-zinc-800"
+            task.DangerLevel === "High" ? "bg-red-500" :
+              task.DangerLevel === "Medium" ? "bg-yellow-600" : "bg-zinc-800"
             }`}>
             <span className="skew-x-[12deg]">Danger: {task.DangerLevel}</span>
           </div>
@@ -91,10 +91,13 @@ export function TaskCard({ task }: TaskCardProps) {
           <h3 className="text-xl font-black text-white italic uppercase tracking-tighter line-clamp-2 leading-none mb-2 group-hover:text-orange-500 transition-colors">
             {task.Title || task.title || 'Unknown Mission'}
           </h3>
-          {task.NgoRef && (
-            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-              DEPLOYED BY: {task.ngo || `DIV-${task.NgoRef.slice(-2)}`}
-            </p>
+          {(task.NgoRef || task.WalletAddr) && (
+            <Link
+              href={`/profile/${task.WalletAddr}`}
+              className="text-[10px] font-mono text-zinc-600 hover:text-orange-600 uppercase tracking-widest transition-colors block"
+            >
+              DEPLOYED BY: {task.ngo || `DIV-${(task.NgoRef || '').toString().slice(-2)}`}
+            </Link>
           )}
         </div>
 

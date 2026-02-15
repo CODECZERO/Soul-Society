@@ -90,15 +90,13 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
 
 
     if (!receiverWalletAddress) {
-      console.error("Task data:", task)
       alert("Error: NGO wallet address not found in task data. Please contact support.")
       return
     }
 
-    // Additional validation for Stellar public key format (starts with G and is 56 chars long)
+    // Additional validation for Stellar public key format
     if (!receiverWalletAddress.startsWith('G') || receiverWalletAddress.length !== 56) {
-      console.error("Invalid wallet address format:", receiverWalletAddress)
-      alert("Error: Invalid NGO wallet address format. It should start with 'G' and be 56 characters long.")
+      alert("Error: Invalid NGO wallet address format.")
       return
     }
 
