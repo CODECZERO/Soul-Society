@@ -1,0 +1,161 @@
+export const mockTasks = [
+  {
+    id: 1,
+    title: "School Supplies for Rural Children",
+    ngo: "Education First NGO",
+    description: "Providing educational materials to 500 children in rural areas",
+    longDescription:
+      "This initiative aims to provide quality educational materials including textbooks, notebooks, pens, and learning aids to 500 underprivileged children in rural areas. The funds will be used to purchase bulk supplies and distribute them directly to schools in remote regions.",
+    goal: 50000,
+    raised: 32500,
+    image: "/school-supplies-rural-children.jpg",
+    category: "Education",
+    location: "Rural Maharashtra",
+    donors: 245,
+    expenses: [
+      { id: 1, amount: 10000, description: "Textbooks and notebooks", date: "2024-10-15", ipfsCid: "QmXxxx" },
+      { id: 2, amount: 8500, description: "Pens and stationery", date: "2024-10-10", ipfsCid: "QmYyyy" },
+      { id: 3, amount: 5000, description: "Learning aids and posters", date: "2024-10-05", ipfsCid: "QmZzzz" },
+    ],
+    proofs: [
+      { id: 1, amount: 10000, txHash: "0x1234...", merkleRoot: "0xabcd...", verified: true },
+      { id: 2, amount: 8500, txHash: "0x5678...", merkleRoot: "0xefgh...", verified: true },
+    ],
+  },
+  {
+    id: 2,
+    title: "Medical Camp in Slums",
+    ngo: "Health for All",
+    description: "Free medical checkups and medicines for underprivileged communities",
+    longDescription:
+      "Organizing free medical camps in urban slums to provide basic healthcare services, medicines, and health awareness programs to 1000+ people monthly.",
+    goal: 75000,
+    raised: 61200,
+    image: "/medical-camp-healthcare.jpg",
+    category: "Health",
+    location: "Mumbai Slums",
+    donors: 189,
+    expenses: [
+      { id: 1, amount: 20000, description: "Medical equipment", date: "2024-10-12", ipfsCid: "QmAaaa" },
+      { id: 2, amount: 15000, description: "Medicines and supplies", date: "2024-10-08", ipfsCid: "QmBbbb" },
+    ],
+    proofs: [{ id: 1, amount: 20000, txHash: "0x9abc...", merkleRoot: "0xijkl...", verified: true }],
+  },
+  {
+    id: 3,
+    title: "Clean Water Initiative",
+    ngo: "Water Warriors",
+    description: "Installing water purification systems in villages without clean water",
+    longDescription:
+      "Building sustainable water purification infrastructure in 10 villages to provide clean drinking water to 5000+ residents.",
+    goal: 100000,
+    raised: 45800,
+    image: "/clean-water-purification.jpg",
+    category: "Relief",
+    location: "Rural Rajasthan",
+    donors: 312,
+    expenses: [{ id: 1, amount: 25000, description: "Purification systems", date: "2024-10-10", ipfsCid: "QmCccc" }],
+    proofs: [],
+  },
+  {
+    id: 4,
+    title: "Tree Plantation Drive",
+    ngo: "Green Earth",
+    description: "Planting 10,000 trees to combat climate change",
+    longDescription:
+      "Environmental conservation project to plant 10,000 native trees across degraded forest areas and urban spaces.",
+    goal: 30000,
+    raised: 18500,
+    image: "/tree-plantation-environment.jpg",
+    category: "Environment",
+    location: "Himachal Pradesh",
+    donors: 156,
+    expenses: [],
+    proofs: [],
+  },
+  {
+    id: 5,
+    title: "Skill Training Program",
+    ngo: "Future Leaders",
+    description: "Vocational training for 200 underprivileged youth",
+    longDescription:
+      "Providing free vocational training in IT, tailoring, and plumbing to help 200 youth gain employment skills.",
+    goal: 60000,
+    raised: 42300,
+    image: "/skill-training-vocational.jpg",
+    category: "Education",
+    location: "Delhi NCR",
+    donors: 203,
+    expenses: [
+      { id: 1, amount: 18000, description: "Training materials", date: "2024-10-09", ipfsCid: "QmDddd" },
+      { id: 2, amount: 12000, description: "Instructor fees", date: "2024-10-06", ipfsCid: "QmEeee" },
+    ],
+    proofs: [{ id: 1, amount: 18000, txHash: "0xdef0...", merkleRoot: "0xmnop...", verified: true }],
+  },
+  {
+    id: 6,
+    title: "Emergency Relief Fund",
+    ngo: "Disaster Relief",
+    description: "Immediate aid for flood-affected families",
+    longDescription:
+      "Providing emergency relief including food, shelter, and medical aid to 500 families affected by recent floods.",
+    goal: 150000,
+    raised: 98700,
+    image: "/disaster-relief-emergency.jpg",
+    category: "Relief",
+    location: "Assam",
+    donors: 421,
+    expenses: [
+      { id: 1, amount: 30000, description: "Food and supplies", date: "2024-10-14", ipfsCid: "QmFfff" },
+      { id: 2, amount: 25000, description: "Shelter materials", date: "2024-10-13", ipfsCid: "QmGggg" },
+      { id: 3, amount: 20000, description: "Medical aid", date: "2024-10-12", ipfsCid: "QmHhhh" },
+    ],
+    proofs: [
+      { id: 1, amount: 30000, txHash: "0x1234...", merkleRoot: "0xqrst...", verified: true },
+      { id: 2, amount: 25000, txHash: "0x5678...", merkleRoot: "0xuvwx...", verified: true },
+    ],
+  },
+]
+
+export const mockNGOs = [
+  {
+    id: 1,
+    name: "Education First NGO",
+    email: "contact@educationfirst.org",
+    totalDonations: 125000,
+    fundsUsed: 98500,
+    remainingBalance: 26500,
+    verifiedProjects: 3,
+    taskCount: 3,
+  },
+  {
+    id: 2,
+    name: "Health for All",
+    email: "info@healthforall.org",
+    totalDonations: 95000,
+    fundsUsed: 75000,
+    remainingBalance: 20000,
+    verifiedProjects: 2,
+    taskCount: 2,
+  },
+  {
+    id: 3,
+    name: "Water Warriors",
+    email: "hello@waterwarriors.org",
+    totalDonations: 85000,
+    fundsUsed: 60000,
+    remainingBalance: 25000,
+    verifiedProjects: 1,
+    taskCount: 1,
+  },
+]
+
+export const mockDonors = [
+  { id: 1, address: "0xabcd...1234", totalDonated: 15000, donationCount: 8 },
+  { id: 2, address: "0xefgh...5678", totalDonated: 12500, donationCount: 6 },
+  { id: 3, address: "0xijkl...9012", totalDonated: 8750, donationCount: 5 },
+  { id: 4, address: "0xmnop...3456", totalDonated: 6200, donationCount: 3 },
+  { id: 5, address: "0xqrst...7890", totalDonated: 5000, donationCount: 2 },
+]
+
+export const categories = ["All", "Education", "Health", "Relief", "Environment"]

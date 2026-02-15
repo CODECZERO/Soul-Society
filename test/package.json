@@ -1,0 +1,70 @@
+{
+  "name": "soul-society-test-backend",
+  "version": "1.0.0",
+  "description": "Test backend setup for Soul-Society server",
+  "main": "test-backend-setup.js",
+  "scripts": {
+    "test": "node test-backend-setup.js",
+    "test:auth": "jest --testPathPattern=auth",
+    "test:posts": "jest --testPathPattern=posts",
+    "test:stellar": "jest --testPathPattern=stellar",
+    "test:payment": "jest --testPathPattern=payment",
+    "test:ipfs": "jest --testPathPattern=ipfs",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "setup:test-db": "node scripts/setup-test-database.js",
+    "clean:test-db": "node scripts/clean-test-database.js"
+  },
+  "keywords": [
+    "test",
+    "backend",
+    "soul-society",
+    "blockchain",
+    "stellar",
+    "ngo",
+    "donation"
+  ],
+  "author": "Soul-Society Team",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.19.2",
+    "mongodb-memory-server": "^10.2.3",
+    "supertest": "^6.3.3"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/jest": "^29.5.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/supertest": "^2.0.12",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"],
+    "testMatch": [
+      "**/test/**/*.test.ts",
+      "**/test/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,js}",
+      "!src/**/*.d.ts",
+      "!src/index.ts",
+      "!src/app.ts"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "testTimeout": 30000,
+    "verbose": true
+  }
+}

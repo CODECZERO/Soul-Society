@@ -1,5 +1,5 @@
 <div align="center">
-  <h1 align="center">✨ AidBridge</h1>
+  <h1 align="center">✨ Soul-Society</h1>
   <p align="center">Revolutionizing Aid Distribution with Blockchain Technology</p>
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -7,11 +7,11 @@
   [![Next.js](https://img.shields.io/badge/Next.js-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-  <img src="https://img.shields.io/github/last-commit/yourusername/aidbridge?style=for-the-badge" alt="Last commit" />
-  <img src="https://img.shields.io/github/contributors/yourusername/aidbridge?style=for-the-badge" alt="Contributors" />
-  <img src="https://img.shields.io/github/issues/yourusername/aidbridge?style=for-the-badge" alt="Open Issues" />
+  <img src="https://img.shields.io/github/last-commit/yourusername/soul-society?style=for-the-badge" alt="Last commit" />
+  <img src="https://img.shields.io/github/contributors/yourusername/soul-society?style=for-the-badge" alt="Contributors" />
+  <img src="https://img.shields.io/github/issues/yourusername/soul-society?style=for-the-badge" alt="Open Issues" />
 
-  ![AidBridge Demo](https://via.placeholder.com/1200x600/2d2d2d/ffffff?text=AidBridge+Demo)
+  ![Soul-Society Demo](https://via.placeholder.com/1200x600/2d2d2d/ffffff?text=Soul-Society+Demo)
 </div>
 
 ---
@@ -95,9 +95,9 @@ This project is participating in the Stellar Journey to Mastery program. Track o
 
 ---
 
-## 🌟 Why AidBridge?
+## 🌟 Why Soul-Society?
 
-AidBridge is a **next-generation decentralized platform** that leverages the power of the Stellar blockchain to transform how aid is distributed globally. Our mission is to create a transparent, efficient, and accountable system that connects donors directly with those in need, eliminating intermediaries and reducing overhead costs.
+Soul-Society is a **next-generation decentralized platform** that leverages the power of the Stellar blockchain to transform how aid is distributed globally. Our mission is to create a transparent, efficient, and accountable system that connects donors directly with those in need, eliminating intermediaries and reducing overhead costs.
 
 ### 🔍 Key Problems We Solve
 
@@ -271,7 +271,7 @@ We welcome contributions from the community! Here's how you can help:
 
 ## 📚 Documentation
 
-For detailed documentation, please visit our [Documentation Wiki](https://github.com/yourusername/aidbridge/wiki).
+For detailed documentation, please visit our [Documentation Wiki](https://github.com/yourusername/soul-society/wiki).
 
 ## 📄 License
 
@@ -284,7 +284,7 @@ Special thanks to these amazing projects and communities:
 - [Stellar Development Foundation](https://stellar.org/) for building the Stellar network
 - [Soroban](https://soroban.stellar.org/) for the smart contracts platform
 - [Next.js](https://nextjs.org/) for the amazing React framework
-- All our [contributors](https://github.com/yourusername/aidbridge/graphs/contributors)
+- All our [contributors](https://github.com/yourusername/soul-society/graphs/contributors)
 
 ## 🌟 Show Your Support
 
@@ -296,13 +296,13 @@ If you find this project helpful, please consider:
 
 ## 📬 Contact
 
-- **Email**: contact@aidbridge.org
-- **Twitter**: [@AidBridgeApp](https://twitter.com/AidBridgeApp)
+- **Email**: contact@soul-society.org
+- **Twitter**: [@Soul-SocietyApp](https://twitter.com/Soul-SocietyApp)
 - **Discord**: [Join our community](https://discord.gg/your-invite-link)
 
 ---
 
 <div align="center">
-  Made with ❤️ by the AidBridge Team
+  Made with ❤️ by the Soul-Society Team
 </div>
 # Soul-Society
