@@ -13,11 +13,12 @@ interface UserDataWallet {
   cid: string;
   prevTxn: string;
   metadata?: string | null;
+  contractId?: string; // Optional override
 }
 
 export async function saveContractWithWallet(userData: UserDataWallet) {
   try {
-    const contractId = process.env.CONTRACT_ID;
+    const contractId = userData.contractId || process.env.CONTRACT_ID;
     if (!contractId) {
       throw new Error('CONTRACT_ID is not defined in environment variables');
     }
@@ -74,14 +75,14 @@ export async function saveContractWithWallet(userData: UserDataWallet) {
   }
 }
 
-export async function getLatestData(privateKey: string) {
+export async function getLatestData(privateKey: string, contractId?: string) {
   try {
-    const contractId = process.env.CONTRACT_ID;
-    if (!contractId) {
+    const activeContractId = contractId || process.env.CONTRACT_ID;
+    if (!activeContractId) {
       throw new Error('CONTRACT_ID is not defined in environment variables');
     }
 
-    const contract = new StellarSdk.Contract(contractId);
+    const contract = new StellarSdk.Contract(activeContractId);
     const sourceKeypair = StellarSdk.Keypair.fromSecret(privateKey);
     const accountId = sourceKeypair.publicKey();
     const account = await server.getAccount(accountId);
