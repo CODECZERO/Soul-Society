@@ -433,6 +433,7 @@ class ApiService {
     cid: string;
     prevTxn: string;
     metadata?: string;
+    contractId?: string;
   }): Promise<ApiResponse<any>> {
     return this.request('/stellar/smart-contract', {
       method: 'POST',
@@ -440,10 +441,10 @@ class ApiService {
     });
   }
 
-  async getLatestContractData(privateKey: string): Promise<ApiResponse<any>> {
+  async getLatestContractData(privateKey: string, contractId?: string): Promise<ApiResponse<any>> {
     return this.request('/stellar/get-latest-data', {
       method: 'POST',
-      body: JSON.stringify({ privateKey }),
+      body: JSON.stringify({ privateKey, contractId }),
     });
   }
 
