@@ -8,6 +8,7 @@ import {
   findNGOByEmail
 } from '../dbQueries/ngo.Queries.js';
 import { createAccount } from '../services/stellar/account.stellar.js';
+import { seireiteiVault } from '../services/stellar/seireiteiVault.service.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
@@ -79,10 +80,21 @@ const singup = AsyncHandler(async (req: Request, res: Response) => {
       password: hashedPassword
     };
 
-    // 4. Register in Vault
+    // 4. Register in DB
     const savedNGO = await registerNGO(ngoData);
 
-    // 5. Generate Tokens
+    // 5. Background on-chain backup (Non-blocking)
+    seireiteiVault.put('NGOs', savedNGO.id, {
+      Id: savedNGO.id,
+      Name: savedNGO.name,
+      Email: savedNGO.email,
+      WalletAddress: savedNGO.walletAddress,
+      RegNumber: savedNGO.regNumber,
+      Description: savedNGO.description,
+      CreatedAt: savedNGO.createdAt
+    }).catch(err => console.warn('[VAULT] NGO signup backup failed:', err));
+
+    // 6. Generate Tokens
     const { accessToken, refreshToken } = generateTokens(
       savedNGO.id,
       savedNGO.email || "",

@@ -3,6 +3,7 @@ import AsyncHandler from '../util/asyncHandler.util.js';
 import { ApiResponse } from '../util/apiResponse.util.js';
 import { saveCommunique, getCommuniquesByDivision } from '../dbQueries/communique.Queries.js';
 import { ApiError } from '../util/apiError.util.js';
+import { seireiteiVault } from '../services/stellar/seireiteiVault.service.js';
 
 const createCommunique = AsyncHandler(async (req: Request, res: Response) => {
   const { Title, Content, Type, NgoId } = req.body;
@@ -17,6 +18,15 @@ const createCommunique = AsyncHandler(async (req: Request, res: Response) => {
     Type,
     NgoRef: NgoId,
   });
+
+  // Background on-chain backup (Non-blocking)
+  seireiteiVault.put('Communiques', communique._id.toString(), {
+    Title,
+    Content,
+    Type,
+    NgoRef: NgoId,
+    Timestamp: new Date().toISOString()
+  }).catch(err => console.warn('[VAULT] Communique backup failed:', err));
 
   return res
     .status(201)

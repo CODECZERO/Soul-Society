@@ -10,6 +10,7 @@ import {
   createDonation,
 } from '../dbQueries/donation.Queries.js';
 import { escrowService } from '../services/stellar/escrow.service.js';
+import { seireiteiVault } from '../services/stellar/seireiteiVault.service.js';
 
 export interface GetDonationRequest {
   transactionId: string;
@@ -84,6 +85,16 @@ const createNewDonation = AsyncHandler(async (req: Request, res: Response) => {
     postID: postId,
     Amount: amount,
   } as any); // Cast as any or match the interface exactly if available
+
+  // Background on-chain audit log (Non-blocking)
+  seireiteiVault.put('DonationAudit', transactionId, {
+    TransactionId: transactionId,
+    Donor: donorId,
+    PostId: postId,
+    Amount: amount,
+    Timestamp: new Date().toISOString()
+  }).catch(err => console.warn('[VAULT] Donation audit log failed:', err));
+
   return res.status(201).json(new ApiResponse(201, result, 'Donation record created'));
 });
 

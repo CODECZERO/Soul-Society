@@ -25,9 +25,15 @@ Detailed documentation has been moved to the `docs/` directory:
 
 ---
 
-## 🏗 System Architecture
+## 🏗 System Architecture (On-Chain First)
 
-Soul-Society uses a hybrid architecture combining a high-performance Next.js frontend, an Express.js backend for off-chain coordination, and a suite of Soroban smart contracts for trustless execution.
+Soul-Society is built with an **On-Chain First** architecture. Instead of relying on a traditional central database for mission-critical data, we leverage the **Stellar/Soroban blockchain** for persistent, decentralized storage. 
+
+> [!NOTE]
+> **Performance Note**: Because we bridge directly to the blockchain for data integrity, some pages may take a few moments to load while fetching the latest on-chain state. Thank you for your patience as we ensure the highest level of transparency and security.
+
+### 🧩 Hybrid Infrastructure
+We use a high-performance Next.js frontend, an Express.js backend for off-chain coordination (indexing and caching), and a suite of Soroban smart contracts for source-of-truth data.
 
 ```mermaid
 graph TB
