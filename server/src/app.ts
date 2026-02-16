@@ -13,7 +13,17 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "script-src": ["'self'", "'unsafe-inline'", "https://va.vercel-scripts.com"],
+        "connect-src": ["'self'", "https://va.vercel-scripts.com", "*.stellar.org", "*.soroban.org"],
+      },
+    },
+  })
+);
 if (!process.env.FRONTEND_URL) {
   throw new Error('FRONTEND_URL is not defined in environment variables');
 }

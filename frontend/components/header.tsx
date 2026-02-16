@@ -21,7 +21,7 @@ export function Header() {
   const dispatch = useDispatch<AppDispatch>()
   const router = useRouter()
   const { error, isConnected: walletConnected, publicKey } = useSelector((state: RootState) => state.wallet)
-  const { isAuthenticated: ngoAuthenticated, ngoProfile } = useSelector((state: RootState) => state.ngoAuth)
+  const { isAuthenticated: ngoAuthenticated, ngoProfile, isLoading: authLoading } = useSelector((state: RootState) => state.ngoAuth)
   const { searchQuery } = useSelector((state: RootState) => state.ui)
   const [isWalletSelectorOpen, setIsWalletSelectorOpen] = React.useState(false)
 
@@ -71,10 +71,15 @@ export function Header() {
         </Link>
 
         <nav className="hidden md:flex gap-1 bg-zinc-900/50 px-2 py-1 rounded-lg border border-zinc-800/50">
-          {!ngoAuthenticated && (
+          {!ngoAuthenticated && !authLoading && (
             <Link href="/ngo/login" className="text-zinc-400 hover:text-amber-400 transition px-3 py-1.5 rounded-md text-xs font-medium hover:bg-zinc-800/50">
               NGO Login
             </Link>
+          )}
+          {authLoading && (
+            <div className="px-3 py-1.5">
+              <div className="h-4 w-12 bg-zinc-800 rounded animate-pulse"></div>
+            </div>
           )}
           <Link href="/explore" className="text-zinc-400 hover:text-amber-400 transition px-3 py-1.5 rounded-md text-xs font-medium hover:bg-zinc-800/50">
             Explore
@@ -89,7 +94,7 @@ export function Header() {
             <Link href="/ngo-dashboard" className="text-zinc-400 hover:text-amber-400 transition px-3 py-1.5 rounded-md text-xs font-medium hover:bg-zinc-800/50">
               Dashboard
             </Link>
-          ) : (
+          ) : !authLoading && (
             <Link href="/verify" className="text-zinc-400 hover:text-amber-400 transition px-3 py-1.5 rounded-md text-xs font-medium hover:bg-zinc-800/50">
               Donations
             </Link>
@@ -117,7 +122,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-3">
-          {!ngoAuthenticated && !walletConnected && (
+          {!ngoAuthenticated && !walletConnected && !authLoading && (
             <Button
               onClick={() => setIsWalletSelectorOpen(true)}
               className="bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-md px-5 h-9"
@@ -155,6 +160,9 @@ export function Header() {
                 <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
+          )}
+          {authLoading && (
+            <div className="h-9 w-24 bg-zinc-900 rounded-md animate-pulse"></div>
           )}
         </div>
       </div>

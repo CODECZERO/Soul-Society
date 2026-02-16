@@ -21,5 +21,10 @@ export const store = configureStore({
   },
 })
 
+// Expose dispatch for non-React utilities (like apiClient)
+if (typeof window !== 'undefined') {
+  (window as any).dispatch = store.dispatch;
+}
+
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch

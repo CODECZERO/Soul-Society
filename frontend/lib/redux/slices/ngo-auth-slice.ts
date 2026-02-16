@@ -136,25 +136,47 @@ export const signupNGO = createAsyncThunk(
 
 export const checkNGOCookieThunk = createAsyncThunk(
   "ngoAuth/checkCookie",
-  async (_, { dispatch }) => {
-    // This will be handled by the checkNGOCookie reducer
+  async (_, { rejectWithValue }) => {
     if (typeof window === 'undefined') {
-      return initialState
+      return null
     }
 
     try {
-      const profile = localStorage.getItem('ngo_profile')
-      if (profile) {
+      // Try localStorage first
+      const profileStr = localStorage.getItem('ngo_profile')
+      if (profileStr) {
         try {
-          return { ...initialState, isAuthenticated: true, ngoProfile: JSON.parse(profile) }
+          return JSON.parse(profileStr) as NGOProfile
         } catch (parseError) {
           localStorage.removeItem('ngo_profile')
         }
       }
-    } catch (error) {
-      }
 
-    return initialState
+      // Fallback to cookies
+      const cookies = document.cookie.split("; ").reduce(
+        (acc, cookie) => {
+          const [key, value] = cookie.split("=")
+          acc[key] = value
+          return acc
+        },
+        {} as Record<string, string>,
+      )
+
+      if (cookies.ngo_profile) {
+        try {
+          const profile = JSON.parse(decodeURIComponent(cookies.ngo_profile))
+          // Sync localStorage if it was missing but cookie exists
+          localStorage.setItem('ngo_profile', JSON.stringify(profile))
+          return profile as NGOProfile
+        } catch (err) {
+          return null
+        }
+      }
+    } catch (error) {
+      return null
+    }
+
+    return null
   },
 )
 
@@ -265,6 +287,19 @@ const ngoAuthSlice = createSlice({
       .addCase(signupNGO.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.payload as string
+      })
+      .addCase(checkNGOCookieThunk.pending, (state) => {
+        state.isLoading = true
+      })
+      .addCase(checkNGOCookieThunk.fulfilled, (state, action) => {
+        state.isLoading = false
+        if (action.payload) {
+          state.isAuthenticated = true
+          state.ngoProfile = action.payload as NGOProfile
+        }
+      })
+      .addCase(checkNGOCookieThunk.rejected, (state) => {
+        state.isLoading = false
       })
   },
 })

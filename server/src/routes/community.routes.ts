@@ -15,6 +15,12 @@ import {
     getCommunitiesList,
     getCommunity,
 } from '../controler/community.controler.js';
+import { validate } from '../midelware/validate.midelware.js';
+import {
+    voteOnTaskSchema,
+    submitProofSchema,
+    voteOnProofSchema
+} from '../schemas/community.schema.js';
 
 const router = Router();
 
@@ -23,17 +29,17 @@ router.get('/all', getCommunitiesList);
 router.get('/:id', getCommunity); // Generic ID lookup for Community Details
 
 // Community voting on Tasks (Main)
-router.post('/vote', voteOnTask);
+router.post('/vote', validate(voteOnTaskSchema), voteOnTask);
 router.post('/vote/xdr', getVoteXdr);
 router.get('/votes/:taskId', getVotesForTask);
 
 // Work proofs (Submission & Retrieval)
-router.post('/submit-proof', submitProof);
+router.post('/submit-proof', validate(submitProofSchema), submitProof);
 router.post('/submit-proof/xdr', getProofXdr);
 router.get('/proofs/task/:taskId', getProofsByTask); // CHANGED: By Task, not NGO
 
 // Proof Voting & Verification
-router.post('/proof/:proofId/vote', voteOnProofCtrl);
+router.post('/proof/:proofId/vote', validate(voteOnProofSchema), voteOnProofCtrl);
 router.get('/proof/verify/:hash', verifyProofByHash);
 
 // Voter stats & leaderboard

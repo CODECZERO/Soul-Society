@@ -133,13 +133,19 @@ class ApiClient {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('ngo_profile');
-      document.cookie = "accessToken=; path=/; max-age=0";
-      document.cookie = "refreshToken=; path=/; max-age=0";
-      document.cookie = "ngo_profile=; path=/; max-age=0";
-      // Dispatch events if needed
+
+      // Expire cookies
+      const cookieOptions = "path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+      document.cookie = `accessToken=; ${cookieOptions}`;
+      document.cookie = `refreshToken=; ${cookieOptions}`;
+      document.cookie = `ngo_profile=; ${cookieOptions}`;
+
+      // Dispatch Redux logout if available
       if ((window as any).dispatch) {
         (window as any).dispatch({ type: 'ngoAuth/logoutNGO' });
-        (window as any).dispatch({ type: 'ui/openAuthModal' });
+      } else {
+        // Fallback redirect if Redux is not yet initialized
+        window.location.href = '/';
       }
     }
   }

@@ -49,7 +49,7 @@ export default function NGODashboardPage() {
   const dispatch = useAppDispatch()
   const debouncedDispatch = useDebouncedDispatch()
 
-  const { isAuthenticated, ngoProfile } = useAppSelector((state) => state.ngoAuth)
+  const { isAuthenticated, ngoProfile, isLoading: authLoading } = useAppSelector((state) => state.ngoAuth)
   const { posts, isLoading: postsLoading } = useAppSelector((state) => state.posts)
   const { donations, isLoading: donationsLoading } = useAppSelector((state) => state.donations)
   const { ngoStats, isLoading: statsLoading } = useAppSelector((state) => state.stats)
@@ -76,12 +76,12 @@ export default function NGODashboardPage() {
     expenses: d.expenses
   })) || []
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated and not loading
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !authLoading) {
       router.push("/ngo/login")
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, authLoading, router])
 
   // Load NGO posts and stats
   useEffect(() => {
@@ -91,6 +91,14 @@ export default function NGODashboardPage() {
       debouncedDispatch(fetchNgoStats({ ngoId: ngoProfile.id }), 500)
     }
   }, [isAuthenticated, ngoProfile, debouncedDispatch])
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-amber-500" />
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return (

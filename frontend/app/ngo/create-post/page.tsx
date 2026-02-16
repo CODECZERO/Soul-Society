@@ -18,7 +18,7 @@ import { Loader2, CheckCircle2, ArrowLeft, Upload, AlertCircle } from "lucide-re
 export default function CreatePostPage() {
   const router = useRouter()
   const dispatch = useDispatch<AppDispatch>()
-  const { isAuthenticated, ngoProfile } = useSelector((state: RootState) => state.ngoAuth)
+  const { isAuthenticated, ngoProfile, isLoading: authLoading } = useSelector((state: RootState) => state.ngoAuth)
 
   const [step, setStep] = useState<"form" | "preview" | "success">("form")
   const [isProcessing, setIsProcessing] = useState(false)
@@ -49,6 +49,14 @@ export default function CreatePostPage() {
 
     createWallet()
   }, [isAuthenticated, ngoProfile, walletAddress])
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -115,7 +123,7 @@ export default function CreatePostPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create post"
       setError(message)
-      } finally {
+    } finally {
       setIsProcessing(false)
     }
   }
