@@ -23,4 +23,11 @@ test.describe('Navigation Flow', () => {
         await page.goto('/');
         await expect(page.getByRole('button', { name: 'Connect Wallet' })).toBeVisible();
     });
+
+    test('should check NGO Login page static elements', async ({ page }) => {
+        await page.goto('/ngo/login');
+        await expect(page.getByText('NGO Login', { exact: true })).toBeVisible();
+        await expect(page.getByPlaceholder(/Enter your email/i)).toBeVisible();
+        await expect(page.getByRole('button', { name: /Sign In/i })).toBeVisible();
+    });
 });

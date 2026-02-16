@@ -8,9 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Users, Target, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
+import { useSelector } from "react-redux"
+import type { RootState } from "@/lib/redux/store"
+
 export default function CommunityPage() {
     const [communities, setCommunities] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const { isAuthenticated: ngoAuthenticated, ngoProfile } = useSelector((state: RootState) => state.ngoAuth)
 
     useEffect(() => {
         const fetchCommunities = async () => {
@@ -55,7 +59,10 @@ export default function CommunityPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {communities.map((community, idx) => (
+                        {(ngoAuthenticated && ngoProfile
+                            ? communities.filter(c => (c.id || c._id) === ngoProfile.id)
+                            : communities
+                        ).map((community, idx) => (
                             <Link href={`/community/${community.id || community._id}`} key={community.id || community._id || idx} className="group block h-full">
                                 <Card className="h-full bg-zinc-900/50 border-zinc-800 group-hover:border-amber-500/40 transition-all rounded-lg overflow-hidden flex flex-col">
                                     {/* Image Header */}
