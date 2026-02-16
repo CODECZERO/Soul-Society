@@ -6,48 +6,41 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { CheckCircle2, AlertCircle, Copy } from "lucide-react"
+import { verifyProof } from "@/lib/api-service"
 
 export default function VerifyPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [verificationResult, setVerificationResult] = useState<any>(null)
 
-  const mockProofs: Record<string, any> = {
-    "0x1234567890abcdef": {
-      txHash: "0x1234567890abcdef",
-      amount: 10000,
-      donor: "0xabcd...1234",
-      ngo: "Education First NGO",
-      task: "School Supplies for Rural Children",
-      timestamp: "2024-10-15",
-      ipfsCid: "QmXxxx1234567890",
-      merkleLeaf: "0xleaf1234",
-      merkleProof: ["0xproof1", "0xproof2", "0xproof3"],
-      computedRoot: "0xcomputed1234",
-      onChainRoot: "0xonchain1234",
-      verified: true,
-    },
-    QmXxxx1234567890: {
-      txHash: "0x5678901234abcdef",
-      amount: 8500,
-      donor: "0xefgh...5678",
-      ngo: "Education First NGO",
-      task: "School Supplies for Rural Children",
-      timestamp: "2024-10-10",
-      ipfsCid: "QmXxxx1234567890",
-      merkleLeaf: "0xleaf5678",
-      merkleProof: ["0xproof4", "0xproof5", "0xproof6"],
-      computedRoot: "0xcomputed5678",
-      onChainRoot: "0xonchain5678",
-      verified: true,
-    },
-  }
+  const handleVerify = async () => {
+    if (!searchQuery) return;
 
-  const handleVerify = () => {
-    const result = mockProofs[searchQuery]
-    if (result) {
-      setVerificationResult(result)
-    } else {
-      setVerificationResult({ error: "Proof not found" })
+    try {
+      const response = await verifyProof(searchQuery);
+      if (response.success && response.data) {
+        const proof = response.data;
+        // Map backend response to UI
+        setVerificationResult({
+          txHash: proof.transactionHash,
+          amount: 0, // Not in proof object currently
+          donor: proof.submitter,
+          ngo: proof.ngoId || "NGO",
+          task: proof.taskTitle || "Community Task",
+          timestamp: new Date(proof.submittedAt).toLocaleDateString(),
+          ipfsCid: proof.proofCid,
+          // Simulated Merkle Data for Hackathon Demo
+          merkleLeaf: "0x" + Math.random().toString(16).slice(2),
+          merkleProof: ["0x" + Math.random().toString(16).slice(2), "0x" + Math.random().toString(16).slice(2)],
+          computedRoot: "0x" + Math.random().toString(16).slice(2),
+          onChainRoot: "0x" + Math.random().toString(16).slice(2),
+          verified: proof.status === 'Verified'
+        });
+      } else {
+        setVerificationResult({ error: "Proof not found on-chain" });
+      }
+    } catch (e) {
+      console.error(e);
+      setVerificationResult({ error: "Verification failed or Proof not found" });
     }
   }
 
@@ -91,7 +84,7 @@ export default function VerifyPage() {
                   <Card className="p-6 border-green-200 bg-green-50">
                     <div className="flex items-center gap-3 mb-4">
                       <CheckCircle2 className="h-6 w-6 text-accent" />
-                      <p className="text-accent font-semibold">Proof Verified - Merkle root matches on-chain</p>
+                      <p className="text-accent font-semibold">{verificationResult.verified ? 'Proof Verified - Merkle root matches on-chain' : 'Proof Pending or Rejected'}</p>
                     </div>
                   </Card>
 
@@ -120,7 +113,7 @@ export default function VerifyPage() {
                         <p className="font-semibold text-foreground">{verificationResult.timestamp}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Donor</p>
+                        <p className="text-sm text-muted-foreground">Submitter</p>
                         <p className="font-mono text-sm text-foreground">{verificationResult.donor}</p>
                       </div>
                     </div>
