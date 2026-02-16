@@ -11,7 +11,7 @@ import type { RootState, AppDispatch } from "@/lib/redux/store"
 import { processDonation, fetchExchangeRate, clearDonationError } from "@/lib/redux/slices/donation-slice"
 import { signTransaction } from "@/lib/redux/slices/wallet-slice"
 import { getDonorStats } from "@/lib/api-service"
-import { Sword, Zap, Shield, Trophy } from "lucide-react"
+import { Trophy } from "lucide-react"
 
 interface DonateModalProps {
   isOpen: boolean
@@ -123,13 +123,13 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md bg-black border border-zinc-900 rounded-none p-8">
-        <DialogHeader className="mb-8 border-b border-zinc-900 pb-4">
-          <DialogTitle className="text-2xl font-black text-white italic uppercase tracking-tighter">
-            {step === "amount" && "Initiate Reiatsu Infusion"}
-            {step === "confirm" && "Forge Infusion"}
-            {step === "success" && "Infusion Manifested"}
-            {step === "error" && "Link Severed"}
+      <DialogContent className="max-w-md bg-zinc-950 border border-zinc-800 rounded-lg p-6">
+        <DialogHeader className="mb-6 border-b border-zinc-800 pb-3">
+          <DialogTitle className="text-xl font-bold text-white tracking-tight">
+            {step === "amount" && "Make a Donation"}
+            {step === "confirm" && "Confirm Donation"}
+            {step === "success" && "Donation Successful"}
+            {step === "error" && "Transaction Failed"}
           </DialogTitle>
         </DialogHeader>
 
@@ -176,30 +176,30 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
                 placeholder={`ENTER AMOUNT IN ${currency}...`}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="bg-zinc-950 border-zinc-900 rounded-none text-white font-mono uppercase tracking-widest placeholder:text-zinc-800 focus-visible:ring-orange-600 h-14"
+                className="bg-zinc-900 border-zinc-800 rounded-md text-white font-mono placeholder:text-zinc-600 focus-visible:ring-amber-500 h-12"
                 disabled={!isConnected}
                 step="0.0000001"
               />
 
               {amount && (
-                <div className="mt-6 p-6 bg-zinc-950 border border-zinc-900 rounded-none space-y-4">
+                <div className="mt-4 p-4 bg-zinc-900 border border-zinc-800 rounded-md space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                      {currency === 'INR' ? 'Spiritual Equivalent' : 'Fiat Equivalent'}
+                    <p className="text-xs text-zinc-500">
+                      {currency === 'INR' ? 'Stellar Equivalent' : 'INR Equivalent'}
                     </p>
-                    <div className="flex items-center gap-2 text-[10px] font-mono text-orange-500 uppercase tracking-widest animate-pulse">
+                    <div className="flex items-center gap-1.5 text-[10px] text-amber-400 animate-pulse">
                       <TrendingUp className="h-3 w-3" />
-                      <span>Live Sync</span>
+                      <span>Live</span>
                     </div>
                   </div>
-                  <p className="text-3xl font-black text-white italic tracking-tighter transition-all duration-300">
+                  <p className="text-2xl font-bold text-white tracking-tight transition-all duration-300">
                     {currency === 'INR'
                       ? `${stellarAmount.toFixed(4)} XLM`
                       : `₹${inrAmount.toFixed(2)}`
                     }
                   </p>
-                  <p className="text-[10px] font-mono text-zinc-700 uppercase tracking-widest">
-                    1 XLM = ₹{exchangeRate.toFixed(2)} [SEIREITEI RATE]
+                  <p className="text-[10px] text-zinc-500">
+                    1 XLM = ₹{exchangeRate.toFixed(2)} (Live Rate)
                   </p>
                 </div>
               )}
@@ -225,9 +225,9 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
             <Button
               onClick={() => setStep("confirm")}
               disabled={!amount || !isConnected}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-black font-black uppercase italic rounded-none tracking-widest h-14 skew-x-[-12deg]"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-md h-11"
             >
-              <span className="skew-x-[12deg]">Forge Infusion</span>
+              Continue to Confirm
             </Button>
           </div>
         )}
@@ -312,22 +312,22 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
             </div>
 
             {donorBadge && (
-              <div className="mt-6 p-6 bg-zinc-950 border-2 border-orange-600/50 relative overflow-hidden group">
+              <div className="mt-4 p-4 bg-zinc-900 border border-amber-500/30 rounded-md relative overflow-hidden group">
                 <div className="absolute -right-4 -top-4 opacity-10 group-hover:rotate-12 transition-transform">
-                  <Trophy className="h-24 w-24 text-orange-600" />
+                  <Trophy className="h-24 w-24 text-amber-500" />
                 </div>
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-[0.3em] mb-2 leading-none">SEIREITEI RECOGNITION</p>
-                <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-1">
+                <p className="text-xs text-zinc-500 mb-1">Donor Recognition</p>
+                <h4 className="text-lg font-bold text-white mb-1">
                   {donorBadge.currentBadge}
                 </h4>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="h-1 flex-1 bg-zinc-900 overflow-hidden">
-                    <div className="h-full bg-orange-600" style={{ width: `${Math.min((donorBadge.totalReiatsu / 500) * 100, 100)}%` }} />
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-1 flex-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min((donorBadge.totalReiatsu / 500) * 100, 100)}%` }} />
                   </div>
-                  <span className="text-[8px] font-mono text-zinc-500 uppercase">{donorBadge.totalReiatsu} / 500 REI</span>
+                  <span className="text-[10px] text-zinc-500">{donorBadge.totalReiatsu} / 500</span>
                 </div>
-                <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-widest leading-relaxed">
-                  Your spiritual pressure has reached the level of a {donorBadge.currentBadge}.
+                <p className="text-xs text-zinc-500">
+                  You've reached the {donorBadge.currentBadge} donor level. Keep going!
                 </p>
               </div>
             )}
