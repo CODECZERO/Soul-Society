@@ -5,10 +5,14 @@ import { Header } from "@/components/header"
 import { TaskCard } from "@/components/task-card"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { apiService, type Post } from "@/lib/api-service"
+import { BOUNTY_BOARD_CATEGORY } from "@/lib/constants"
+import { getPosts } from "@/lib/api-service"
+import type { Post } from "@/lib/api-service"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/lib/redux/store"
 
 export default function BountyBoardPage() {
-    const [searchQuery, setSearchQuery] = useState("")
+    const { searchQuery } = useSelector((state: RootState) => state.ui)
     const [posts, setPosts] = useState<Post[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
@@ -19,10 +23,10 @@ export default function BountyBoardPage() {
     const loadBounties = async () => {
         try {
             setIsLoading(true)
-            const response = await apiService.getPosts()
+            const response = await getPosts()
             if (response && response.success && Array.isArray(response.data)) {
                 // Filter only Suppression tasks for Bounty Board
-                const bounties = response.data.filter(p => p.Type === "Suppression" || p.category === "Suppression")
+                const bounties = response.data.filter((p: Post) => p.Type === BOUNTY_BOARD_CATEGORY || p.category === BOUNTY_BOARD_CATEGORY)
                 setPosts(bounties)
             }
         } catch (err) {
@@ -50,20 +54,11 @@ export default function BountyBoardPage() {
                         </h1>
                     </div>
                     <p className="text-zinc-500 font-mono uppercase tracking-widest text-xs mb-8 ml-6">
-                        Authorized suppression tasks for certified Soul Reapers only.
+                        Authorized tasks for verified NGOs only.
                     </p>
 
-                    <div className="mb-12">
-                        <div className="relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-600 group-focus-within:text-red-500 transition-colors" />
-                            <Input
-                                placeholder="TRACK HOLLOW SIGNATURES..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-12 bg-zinc-950 border-zinc-900 rounded-none text-white font-mono uppercase tracking-widest placeholder:text-zinc-700 focus-visible:ring-red-600 focus-visible:border-red-600 h-14"
-                            />
-                        </div>
-                    </div>
+                    {/* Global search is in header, but keeping local visuals for redundancy or removing if redundant */}
+                    {/* Removing redundant local search box to emphasize global search */}
 
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-24 gap-4">
