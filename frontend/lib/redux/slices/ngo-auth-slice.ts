@@ -39,8 +39,8 @@ export const loginNGO = createAsyncThunk(
   "ngoAuth/login",
   async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      const { apiService } = await import("@/lib/api-service")
-      const response = await apiService.login({ email, password })
+      const { login } = await import("@/lib/api-service")
+      const response = await login({ email, password })
 
       if (response.success && response.data) {
         const { accessToken, refreshToken, userData } = response.data
@@ -69,8 +69,6 @@ export const loginNGO = createAsyncThunk(
         }
 
         return ngoProfile
-
-        return ngoProfile
       } else {
         throw new Error(response.message || "Login failed")
       }
@@ -85,8 +83,8 @@ export const signupNGO = createAsyncThunk(
   "ngoAuth/signup",
   async (ngoData: any, { rejectWithValue }) => {
     try {
-      const { apiService } = await import("@/lib/api-service")
-      const response = await apiService.signup({
+      const { signup } = await import("@/lib/api-service")
+      const response = await signup({
         ngoName: ngoData.ngoName,
         regNumber: ngoData.regNumber,
         description: ngoData.description,
