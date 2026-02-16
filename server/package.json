@@ -8,7 +8,7 @@
     "dev": "nodemon --exec tsx ./src/index.ts",
     "build": "tsc",
     "format": "prettier --write .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
   },
   "keywords": [],
   "author": "",
@@ -29,20 +29,29 @@
     "multer": "^2.0.2",
     "multiformats": "^13.4.1",
     "nanoid": "^5.1.6",
-    "pinata": "^2.5.1"
+    "pinata": "^2.5.1",
+    "winston": "^3.19.0",
+    "zstd-codec": "^0.1.5"
   },
   "devDependencies": {
+    "@jest/globals": "^30.2.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/graceful-fs": "^4.1.9",
+    "@types/jest": "^30.0.0",
     "@types/json-schema": "^7.0.15",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^20.19.23",
+    "@types/supertest": "^6.0.3",
     "@types/urijs": "^1.19.25",
+    "jest": "^30.2.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.8.1",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.0.0"
