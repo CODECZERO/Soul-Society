@@ -1,38 +1,36 @@
-import mongoose, { Types } from 'mongoose';
-import { expenseModel } from '../model/expense.model.js';
+import { seireiteiVault } from '../services/stellar/seireiteiVault.service.js';
+import { nanoid } from 'nanoid';
 
 const getPrevTxn = async (PostId: string): Promise<string> => {
   try {
-    const currentTxn = await expenseModel
-      .findOne({ postIDs: new mongoose.Types.ObjectId(PostId) })
-      .sort({ createdAt: -1 })
-      .select('currentTxn -_id')
-      .lean<{ currentTxn: string }>();
-    if (!currentTxn) {
-      // Return empty string instead of throwing error for new posts
-      return '';
-    }
-    return currentTxn.currentTxn;
+    // In decentralized vault, we use a specific key for 'Latest_Expense' per Post
+    const result = await seireiteiVault.get('System', `Latest_Expense_${PostId}`);
+    return result || '';
   } catch (error) {
-    console.error('Error getting previous transaction:', error);
+    console.error('Error getting previous transaction from blockchain:', error);
     return '';
   }
 };
 
-interface TransactionData {
-  currentTxn: unknown;
-  previousTxn?: string;
-  postID: string;
-  ipfsCid?: string;
-}
-
-const createTransaction = async (txnData: unknown, postId: string) => {
+const createTransaction = async (txnData: any, postId: string) => {
   try {
     if (!txnData) throw new Error('Invalid transaction data');
-    return await expenseModel.create({
+
+    const expenseId = nanoid();
+    const data = {
+      _id: expenseId,
       currentTxn: txnData,
-      postIDs: new mongoose.Types.ObjectId(postId),
-    });
+      postIDs: postId,
+      createdAt: new Date().toISOString()
+    };
+
+    await seireiteiVault.put('Expenses', expenseId, data);
+
+    // Update 'Latest' pointer for this post
+    await seireiteiVault.put('System', `Latest_Expense_${postId}`, txnData);
+
+    console.log(`[VAULT] Expense recorded on-chain: ${expenseId}`);
+    return data;
   } catch (error) {
     return error;
   }
