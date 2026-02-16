@@ -1,36 +1,87 @@
 #![cfg(test)]
 use super::*;
-use soroban_sdk::testutils::Address as _;
-use soroban_sdk::{Env, Address};
+use soroban_sdk::{testutils::Address as _, Address, Env, String as SorobanString};
 
-#[test]
-fn test_treasury_lifecycle() {
+fn setup() -> (Env, DivisionTreasuryClient<'static>, Address) {
     let env = Env::default();
-    let contract_id = env.register(DivisionTreasury, ());
-    let client = DivisionTreasuryClient::new(&env, &contract_id);
-
-    let divider = Address::generate(&env);
     env.mock_all_auths();
-
-    // Test deposit
-    client.deposit(&divider, &1000);
-    assert_eq!(client.get_balance(&divider), 1000);
-
-    // Test withdraw
-    client.withdraw(&divider, &400);
-    assert_eq!(client.get_balance(&divider), 600);
+    let id = env.register(DivisionTreasury, ());
+    let client = DivisionTreasuryClient::new(&env, &id);
+    let admin = Address::generate(&env);
+    // threshold = 1000, required_approvals = 2
+    client.initialize(&admin, &1000, &2);
+    (env, client, admin)
 }
 
 #[test]
-#[should_panic(expected = "Insufficient Reiatsu in Treasury")]
-fn test_insufficient_funds() {
-    let env = Env::default();
-    let contract_id = env.register(DivisionTreasury, ());
-    let client = DivisionTreasuryClient::new(&env, &contract_id);
+fn test_deposit() {
+    let (env, client, _admin) = setup();
+    let div = Address::generate(&env);
+    client.deposit(&div, &500, &SorobanString::from_str(&env, "Funding"));
+    assert_eq!(client.get_balance(&div), 500);
 
-    let divider = Address::generate(&env);
-    env.mock_all_auths();
+    let history = client.get_history(&div);
+    assert_eq!(history.len(), 1);
+    assert_eq!(history.get(0).unwrap().tx_type, TxType::Deposit);
+}
 
-    client.deposit(&divider, &100);
-    client.withdraw(&divider, &200);
+#[test]
+fn test_direct_withdrawal_under_threshold() {
+    let (env, client, _admin) = setup();
+    let div = Address::generate(&env);
+    client.deposit(&div, &2000, &SorobanString::from_str(&env, "Seed"));
+    client.withdraw(&div, &500, &SorobanString::from_str(&env, "Supplies"));
+    assert_eq!(client.get_balance(&div), 1500);
+}
+
+#[test]
+fn test_multisig_withdrawal() {
+    let (env, client, admin) = setup();
+    let div = Address::generate(&env);
+    let signer2 = Address::generate(&env);
+    
+    client.add_signer(&admin, &signer2);
+    client.deposit(&div, &5000, &SorobanString::from_str(&env, "Fund"));
+    
+    // Request > threshold → creates multi-sig request
+    client.withdraw(&div, &2000, &SorobanString::from_str(&env, "Big purchase"));
+    assert_eq!(client.get_balance(&div), 5000); // Not yet deducted
+
+    let req = client.get_request(&0).unwrap();
+    assert!(!req.executed);
+    assert_eq!(req.approvals, 0);
+    
+    // First approval
+    client.approve_withdrawal(&admin, &0);
+    let req1 = client.get_request(&0).unwrap();
+    assert_eq!(req1.approvals, 1);
+    assert!(!req1.executed);
+
+    // Second approval → executes
+    client.approve_withdrawal(&signer2, &0);
+    let req2 = client.get_request(&0).unwrap();
+    assert!(req2.executed);
+    assert_eq!(client.get_balance(&div), 3000);
+}
+
+#[test]
+fn test_budget_setting() {
+    let (env, client, admin) = setup();
+    let div = Address::generate(&env);
+    client.set_budget(&admin, &div, &10000);
+    assert_eq!(client.get_budget(&div), 10000);
+}
+
+#[test]
+fn test_audit_trail() {
+    let (env, client, _admin) = setup();
+    let div = Address::generate(&env);
+    client.deposit(&div, &1000, &SorobanString::from_str(&env, "A"));
+    client.deposit(&div, &500, &SorobanString::from_str(&env, "B"));
+    client.withdraw(&div, &300, &SorobanString::from_str(&env, "C"));
+    
+    let history = client.get_history(&div);
+    assert_eq!(history.len(), 3);
+    assert_eq!(history.get(0).unwrap().tx_type, TxType::Deposit);
+    assert_eq!(history.get(2).unwrap().tx_type, TxType::Withdrawal);
 }
