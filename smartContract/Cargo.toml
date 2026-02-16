@@ -2,6 +2,8 @@
 resolver = "2"
 members = [
   "contracts/*",
+  "contracts/seireitei-vault",
+  "tools/network-verifier",
 ]
 
 [workspace.dependencies]
