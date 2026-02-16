@@ -2,13 +2,14 @@ import { Request, Response } from 'express';
 import AsyncHandler from '../util/asyncHandler.util.js';
 import { ApiError } from '../util/apiError.util.js';
 import { ApiResponse } from '../util/apiResponse.util.js';
-import { Types } from 'mongoose';
+
 import {
   getDonation,
   getAllDonation,
   getDonationRelatedToPost,
   createDonation,
 } from '../dbQueries/donation.Queries.js';
+import { escrowService } from '../services/stellar/escrow.service.js';
 
 export interface GetDonationRequest {
   transactionId: string;
@@ -42,10 +43,54 @@ const getDonationsByPost = AsyncHandler(async (req: Request, res: Response) => {
   const { postId } = req.params;
   if (!postId) throw new ApiError(400, 'Post ID is required');
 
-  const donations = await getDonationRelatedToPost(new Types.ObjectId(postId));
+  const donations = await getDonationRelatedToPost(postId);
   if (!donations) throw new ApiError(404, 'No donations found for this post');
 
   return res.status(200).json(new ApiResponse(200, donations, 'Post donations retrieved'));
 });
 
-export { getDonationById, getAllDonations, getDonationsByPost };
+// ─── Create Escrow XDR ─────────────────────────────────────────────
+
+const getEscrowXdr = AsyncHandler(async (req: Request, res: Response) => {
+  const { donorPublicKey, ngoPublicKey, totalAmount, lockedAmount, taskId, deadline } = req.body;
+
+  if (!donorPublicKey || !ngoPublicKey || !totalAmount || !lockedAmount || !taskId || !deadline) {
+    throw new ApiError(400, 'All fields required: donorPublicKey, ngoPublicKey, totalAmount, lockedAmount, taskId, deadline');
+  }
+
+  const xdr = await escrowService.buildCreateEscrowTx(
+    donorPublicKey,
+    ngoPublicKey,
+    Number(totalAmount),
+    Number(lockedAmount),
+    taskId,
+    Number(deadline)
+  );
+
+  return res.status(200).json(new ApiResponse(200, { xdr }, 'Escrow creation XDR generated'));
+});
+
+// ─── Save Donation Record ──────────────────────────────────────────
+
+const createNewDonation = AsyncHandler(async (req: Request, res: Response) => {
+  const { transactionId, donorId, postId, amount } = req.body;
+  if (!transactionId || !donorId || !postId || !amount) {
+    throw new ApiError(400, 'All fields required');
+  }
+
+  const result = await createDonation({
+    TransactionId: transactionId,
+    Donor: donorId,
+    postID: postId,
+    Amount: amount,
+  } as any); // Cast as any or match the interface exactly if available
+  return res.status(201).json(new ApiResponse(201, result, 'Donation record created'));
+});
+
+export {
+  getDonationById,
+  getAllDonations,
+  getDonationsByPost,
+  getEscrowXdr,
+  createNewDonation
+};
