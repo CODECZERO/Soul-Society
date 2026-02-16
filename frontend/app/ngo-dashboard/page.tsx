@@ -59,6 +59,7 @@ export default function NGODashboardPage() {
     verifiedProjects: 0,
   })
   const [donations, setDonations] = useState<any[]>([])
+  const [chartData, setChartData] = useState<any[]>([])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -77,16 +78,36 @@ export default function NGODashboardPage() {
           const ngoPosts = postsResponse.data.filter((post: Post) => post.NgoRef === ngoProfile?.id)
           setPosts(ngoPosts)
 
-          const totalRaised = ngoPosts.reduce((sum, post) => sum + (post.CollectedAmount || 0), 0)
-          const fundsUsed = Math.floor(totalRaised * 0.68)
-          const remainingBalance = totalRaised - fundsUsed
+          // Load advanced stats from backend
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+          const statsResponse = await fetch(`${baseUrl}/stats/ngo/${ngoProfile?.id}`)
+          const statsRes = await statsResponse.json()
 
-          setStats({
-            totalDonations: totalRaised,
-            fundsUsed,
-            remainingBalance,
-            verifiedProjects: ngoPosts.length,
-          })
+          if (statsRes.success) {
+            setStats({
+              totalDonations: statsRes.data.totalRaised,
+              fundsUsed: statsRes.data.totalSpent,
+              remainingBalance: statsRes.data.remainingBalance,
+              verifiedProjects: ngoPosts.length,
+            })
+            setChartData(statsRes.data.chartData.map((d: any) => ({
+              name: d.name,
+              value: d.donations,
+              expenses: d.expenses
+            })))
+          } else {
+            // Fallback for demo
+            const totalRaised = ngoPosts.reduce((sum, post) => sum + (post.CollectedAmount || 0), 0)
+            const fundsUsed = Math.floor(totalRaised * 0.68)
+            const remainingBalance = totalRaised - fundsUsed
+
+            setStats({
+              totalDonations: totalRaised,
+              fundsUsed,
+              remainingBalance,
+              verifiedProjects: ngoPosts.length,
+            })
+          }
 
           const allDonationsResponse = await getDonations()
           if (allDonationsResponse.success) {
@@ -133,14 +154,6 @@ export default function NGODashboardPage() {
       proofCount: taskDonations.length,
     }
   })
-
-  const chartData = [
-    { month: "Jan", donations: 15000, usage: 8000 },
-    { month: "Feb", donations: 22000, usage: 18000 },
-    { month: "Mar", donations: 35000, usage: 28000 },
-    { month: "Apr", donations: 28000, usage: 25000 },
-    { month: "May", donations: 25000, usage: 19500 },
-  ]
 
   return (
     <div className="min-h-screen bg-zinc-950">

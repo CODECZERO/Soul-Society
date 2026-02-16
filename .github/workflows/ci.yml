@@ -60,7 +60,7 @@ jobs:
           ATS: soul_society_access_secret_12345
           RTS: soul_society_refresh_secret_67890
           # Public Config (from server/.env)
-          PORT: 8000
+          PORT: 8080
           MONGODB_URI: mongodb://localhost:27017/soul-society 
           FRONTEND_URL: http://localhost:3000
           BLOCKCHAIN_NETWORK: https://horizon-testnet.stellar.org
@@ -90,12 +90,14 @@ jobs:
         run: npm ci --legacy-peer-deps
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
+      - name: Build frontend
+        run: npm run build
       - name: Run Playwright tests
         run: npx playwright test
         env:
           CI: true
           # Public Config (from frontend/.env.local)
-          NEXT_PUBLIC_API_URL: http://127.0.0.1:8000/api
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:8080/api
           NEXT_PUBLIC_STELLAR_NETWORK: TESTNET
           NEXT_PUBLIC_HORIZON_URL: https://horizon-testnet.stellar.org
           NEXT_PUBLIC_REAPER_REGISTRY_CONTRACT_ID: CAR65QGGO267T4AD6O47TYWQKU5JTIP5RA2QO5NRYP763CJEYG2G3SNP
