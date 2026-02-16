@@ -78,6 +78,18 @@ jobs:
     defaults:
       run:
         working-directory: ./frontend
+    env:
+      CI: true
+      # Public Config (from frontend/.env.local)
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:8080/api
+      NEXT_PUBLIC_STELLAR_NETWORK: TESTNET
+      NEXT_PUBLIC_HORIZON_URL: https://horizon-testnet.stellar.org
+      NEXT_PUBLIC_REAPER_REGISTRY_CONTRACT_ID: CAR65QGGO267T4AD6O47TYWQKU5JTIP5RA2QO5NRYP763CJEYG2G3SNP
+      NEXT_PUBLIC_VAULT_CONTRACT_ID: CAECJ2FR5ARC3264I66GLWW5U6PEBYPGUKKI6FBRWSCYGCXDRO4ZJBPA
+      NEXT_PUBLIC_TOKEN_CONTRACT_ID: CCKS3RKLA34FYHBHYL5WHLKJWX5FRHHNJBGMPBAPWSXPRSB2OEAEDXGE
+      NEXT_PUBLIC_BADGE_CONTRACT_ID: CC76VNFKSTN5KOR7LHTCDI4QW44V5F5B5N5E5P5S5W5S5X5C5H5U5P5U
+      NEXT_PUBLIC_APP_NAME: "Soul Society Registry"
+
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js 20
@@ -92,16 +104,7 @@ jobs:
         run: npx playwright install --with-deps
       - name: Build frontend
         run: npm run build
+      - name: Verify build artifacts
+        run: ls -la .next
       - name: Run Playwright tests
         run: npx playwright test
-        env:
-          CI: true
-          # Public Config (from frontend/.env.local)
-          NEXT_PUBLIC_API_URL: http://127.0.0.1:8080/api
-          NEXT_PUBLIC_STELLAR_NETWORK: TESTNET
-          NEXT_PUBLIC_HORIZON_URL: https://horizon-testnet.stellar.org
-          NEXT_PUBLIC_REAPER_REGISTRY_CONTRACT_ID: CAR65QGGO267T4AD6O47TYWQKU5JTIP5RA2QO5NRYP763CJEYG2G3SNP
-          NEXT_PUBLIC_VAULT_CONTRACT_ID: CAECJ2FR5ARC3264I66GLWW5U6PEBYPGUKKI6FBRWSCYGCXDRO4ZJBPA
-          NEXT_PUBLIC_TOKEN_CONTRACT_ID: CCKS3RKLA34FYHBHYL5WHLKJWX5FRHHNJBGMPBAPWSXPRSB2OEAEDXGE
-          NEXT_PUBLIC_BADGE_CONTRACT_ID: CC76VNFKSTN5KOR7LHTCDI4QW44V5F5B5N5E5P5S5W5S5X5C5H5U5P5U
-          NEXT_PUBLIC_APP_NAME: "Soul Society Registry"
