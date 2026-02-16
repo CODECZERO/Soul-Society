@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Header } from "@/components/header"
-import { apiService } from "@/lib/api-service"
-import { Trophy, Sword, Shield, Zap } from "lucide-react"
+import { Trophy, Sword, Shield, Zap, Search, Star } from "lucide-react"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/lib/redux/store"
 
 interface LeaderboardItem {
     divisionId: string
@@ -15,6 +16,7 @@ interface LeaderboardItem {
 }
 
 export default function LeaderboardPage() {
+    const { searchQuery } = useSelector((state: RootState) => state.ui)
     const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
@@ -40,12 +42,17 @@ export default function LeaderboardPage() {
 
     const getRankIcon = (rank: number) => {
         switch (rank) {
-            case 1: return <Trophy className="h-6 w-6 text-yellow-500" />
-            case 2: return <Sword className="h-6 w-6 text-zinc-400" />
+            case 1: return <Trophy className="h-8 w-8 text-yellow-500 animate-bounce" />
+            case 2: return <Sword className="h-7 w-7 text-zinc-400 rotate-12" />
             case 3: return <Shield className="h-6 w-6 text-orange-700" />
-            default: return <span className="text-zinc-700 font-black italic">{rank}</span>
+            default: return <span className="text-zinc-700 font-black italic text-xl">{rank}</span>
         }
     }
+
+    const filteredLeaderboard = leaderboard.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.captain.toLowerCase().includes(searchQuery.toLowerCase())
+    )
 
     return (
         <div className="min-h-screen bg-black">
@@ -75,17 +82,20 @@ export default function LeaderboardPage() {
                                         <th className="px-6 py-4 text-[10px] font-black uppercase text-zinc-600 tracking-widest italic">Division</th>
                                         <th className="px-6 py-4 text-[10px] font-black uppercase text-zinc-600 tracking-widest italic">Captain</th>
                                         <th className="px-6 py-4 text-[10px] font-black uppercase text-zinc-600 tracking-widest italic text-center">Missions</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-zinc-600 tracking-widest italic text-right">Reiatsu Raised</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-zinc-600 tracking-widest italic text-right">Total Donated</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {isLoading ? (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-12 text-center text-zinc-700 font-mono uppercase text-xs animate-pulse">
-                                                Retrieving Division Intel...
+                                            <td colSpan={5} className="px-6 py-24 text-center">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <div className="w-12 h-12 border-4 border-orange-600/20 border-t-orange-600 rounded-full animate-spin" />
+                                                    <p className="text-orange-500 font-mono uppercase tracking-[0.3em] text-[10px]">Retrieving Division Intel...</p>
+                                                </div>
                                             </td>
                                         </tr>
-                                    ) : leaderboard.map((item) => (
+                                    ) : filteredLeaderboard.length > 0 ? filteredLeaderboard.map((item) => (
                                         <tr
                                             key={item.divisionId}
                                             className="border-b border-zinc-900/50 hover:bg-zinc-900/30 transition-colors group"
@@ -99,7 +109,7 @@ export default function LeaderboardPage() {
                                                         {item.name}
                                                     </span>
                                                     <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                                                        SEIREITEI REGISTERED
+                                                        Verified
                                                     </span>
                                                 </div>
                                             </td>
@@ -109,9 +119,9 @@ export default function LeaderboardPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-6 text-center">
-                                                <div className="inline-flex items-center gap-2 bg-zinc-900 px-3 py-1 skew-x-[-12deg] border border-zinc-800">
-                                                    <Zap className="h-3 w-3 text-orange-500 skew-x-[12deg]" />
-                                                    <span className="text-white font-black italic skew-x-[12deg]">{item.missionsCompleted}</span>
+                                                <div className="inline-flex items-center gap-2 bg-zinc-900 px-3 py-1 rounded-md border border-zinc-800">
+                                                    <Zap className="h-3 w-3 text-orange-500" />
+                                                    <span className="text-white font-black italic">{item.missionsCompleted}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-6 text-right">
@@ -120,7 +130,13 @@ export default function LeaderboardPage() {
                                                 </span>
                                             </td>
                                         </tr>
-                                    ))}
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={5} className="px-6 py-24 text-center text-zinc-800 font-black uppercase italic tracking-widest border-t border-zinc-900/50">
+                                                No spiritual signatures match your query.
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -139,7 +155,7 @@ export default function LeaderboardPage() {
                         </div>
                         <div className="p-6 bg-zinc-950 border border-zinc-900 flex flex-col items-center text-center gap-4">
                             <Zap className="h-8 w-8 text-zinc-400" />
-                            <h3 className="text-white font-black uppercase italic tracking-widest text-xs">Reiatsu Density</h3>
+                            <h3 className="text-white font-black uppercase italic tracking-widest text-xs">Donation Impact</h3>
                             <p className="text-zinc-600 text-[10px] font-mono leading-relaxed">Financial support concentration from donor souls.</p>
                         </div>
                     </div>
