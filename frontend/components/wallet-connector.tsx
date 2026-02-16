@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Wallet, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
 import { useWallet, useFreighterAvailable, useNetworkInfo } from "@/hooks/use-wallet"
+import { NETWORK_LABELS } from '@/lib/constants'
 
 interface WalletConnectorProps {
   onConnect?: () => void
@@ -68,6 +69,7 @@ export function WalletConnector({ onConnect, onDisconnect, className }: WalletCo
             </Badge>
           </div>
           <CardDescription>
+
             {isTestnet ? "Testnet" : "Mainnet"} • {network}
           </CardDescription>
         </CardHeader>
