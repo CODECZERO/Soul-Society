@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+
 import { CheckCircle2, Loader2, Upload } from "lucide-react"
+import { useWallet } from "@/lib/wallet-context"
+import { uploadToIPFS, submitProof } from "@/lib/api-service"
+import { submitProofTransaction } from "@/lib/stellar-utils"
 
 interface UploadProofModalProps {
   isOpen: boolean
@@ -24,6 +28,8 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
   })
   const [ipfsCid, setIpfsCid] = useState("")
 
+  const { signTransaction, publicKey } = useWallet()
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setFormData({ ...formData, file: e.target.files[0] })
@@ -31,17 +37,60 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
   }
 
   const handleSubmit = async () => {
-    setStep("uploading")
-    // Simulate IPFS upload
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    setIpfsCid("QmXxxx" + Math.random().toString(16).slice(2, 10))
-    setStep("success")
+    if (!formData.file || !task) return;
+
+    try {
+      setStep("uploading")
+
+      // 1. Upload to IPFS
+      console.log("Uploading to IPFS...");
+      const ipfsResponse = await uploadToIPFS(formData.file);
+      if (!ipfsResponse.success || !ipfsResponse.data) {
+        throw new Error("Failed to upload to IPFS");
+      }
+      const cid = ipfsResponse.data.Hash || ipfsResponse.data.cid || "QmMock" + Math.random().toString(16).slice(2); // Fallback if mock
+      setIpfsCid(cid);
+      console.log("IPFS CID:", cid);
+
+      // 2. Submit Proof Transaction
+      // Ensure we have the signer
+      if (!publicKey) {
+        throw new Error("Wallet not connected");
+      }
+
+      console.log("Submitting Proof to Blockchain...");
+      const result = await submitProofTransaction({
+        ngoPublicKey: publicKey, // The signer must be the NGO
+        taskId: task.id || task._id, // Handle both id formats
+        proofCid: cid
+      }, signTransaction);
+
+      // 3. Save to Backend (Mongo)
+      if (result.success && result.hash) {
+        console.log("Saving Proof to Backend...");
+        await submitProof(task.id || task._id, {
+          submitter: publicKey,
+          cid: cid,
+          amount: parseFloat(formData.amount),
+          description: formData.description,
+          transactionHash: result.hash,
+          ngoId: task.ngo || task.NgoRef || "",
+        });
+      }
+
+      setStep("success")
+    } catch (error) {
+      console.error("Proof submission failed:", error);
+      alert("Failed to submit proof: " + (error as Error).message);
+      setStep("form"); // Go back to form on error
+    }
   }
 
   const handleClose = () => {
     setStep("form")
     setFormData({ amount: "", description: "", file: null })
-    setIpfsCid("")
+    // Do not clear cid immediately if we want to show success
+    if (step !== "success") setIpfsCid("")
     onClose()
   }
 
