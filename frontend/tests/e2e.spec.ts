@@ -28,36 +28,4 @@ test.describe('Visitor Flow', () => {
     });
 });
 
-test.describe('NGO Flow (Mocked)', () => {
-    test('should simulate NGO login and dashboard access', async ({ page }) => {
-        // 1. Setup Mock Route (Must be done before action)
-        await page.route('**/ngo/login', async route => {
-            const json = {
-                success: true,
-                data: {
-                    token: 'fake-jwt-token',
-                    ngo: {
-                        id: '123',
-                        name: 'Test NGO',
-                        email: 'test@ngo.org'
-                    }
-                }
-            };
-            await route.fulfill({ json });
-        });
-
-        // 2. Go to Login
-        await page.goto('/ngo/login');
-
-        // 3. Fill Form
-        await page.getByPlaceholder('Enter your email').fill('test@ngo.org');
-        await page.getByPlaceholder('Enter your password').fill('password123');
-
-        // 4. Submit
-        await page.getByRole('button', { name: 'Sign In' }).click();
-
-        // 5. Verify Redirect (check URL or success message)
-        // Since we mocked the API, if the frontend handles it correctly, it should redirect.
-        // await expect(page).toHaveURL(/\/ngo\/dashboard/);
-    });
-});
+// NGO Flow removed as per user request to avoid server dependencies.

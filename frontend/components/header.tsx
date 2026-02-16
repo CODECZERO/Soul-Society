@@ -71,9 +71,11 @@ export function Header() {
         </Link>
 
         <nav className="hidden md:flex gap-1 bg-zinc-900/50 px-2 py-1 rounded-lg border border-zinc-800/50">
-          <Link href="/ngo/login" className="text-zinc-400 hover:text-amber-400 transition px-3 py-1.5 rounded-md text-xs font-medium hover:bg-zinc-800/50">
-            NGO Login
-          </Link>
+          {!ngoAuthenticated && (
+            <Link href="/ngo/login" className="text-zinc-400 hover:text-amber-400 transition px-3 py-1.5 rounded-md text-xs font-medium hover:bg-zinc-800/50">
+              NGO Login
+            </Link>
+          )}
           <Link href="/explore" className="text-zinc-400 hover:text-amber-400 transition px-3 py-1.5 rounded-md text-xs font-medium hover:bg-zinc-800/50">
             Explore
           </Link>
