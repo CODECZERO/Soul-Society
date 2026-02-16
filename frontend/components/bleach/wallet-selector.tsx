@@ -13,7 +13,7 @@ import {
     DialogDescription
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Loader2, X, Shield, Swords, Ghost } from "lucide-react"
+import { Loader2, X, Shield, Wallet, KeyRound } from "lucide-react"
 
 interface BleachWalletSelectorProps {
     isOpen: boolean
@@ -29,19 +29,19 @@ export function BleachWalletSelector({ isOpen, onClose }: BleachWalletSelectorPr
             id: "freighter",
             name: "Freighter",
             icon: Shield,
-            description: "Standard Soul Reaper Gear",
+            description: "Stellar's official browser wallet",
         },
         {
             id: "albedo",
-            name: "AlbedoMask",
-            icon: Ghost,
-            description: "Hollow-fied Connection",
+            name: "Albedo",
+            icon: KeyRound,
+            description: "Web-based Stellar signer",
         },
         {
-            id: "rabet",
-            name: "Rabet",
-            icon: Swords,
-            description: "Vanguard Signer",
+            id: "ledger",
+            name: "Ledger",
+            icon: Wallet,
+            description: "Hardware wallet support",
         }
     ]
 
@@ -56,47 +56,45 @@ export function BleachWalletSelector({ isOpen, onClose }: BleachWalletSelectorPr
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-black border-2 border-orange-600 text-white rounded-none max-w-md p-0 overflow-hidden">
+            <DialogContent className="bg-zinc-950 border border-zinc-800 text-white rounded-lg max-w-md p-0 overflow-hidden">
                 <div className="absolute top-0 right-0 p-4">
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={onClose}
-                        className="text-orange-500 hover:text-white hover:bg-orange-600 rounded-none"
+                        className="text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md"
                     >
                         <X className="h-4 w-4" />
                     </Button>
                 </div>
 
-                <DialogHeader className="p-8 pt-10 border-b border-orange-900/50 bg-gradient-to-b from-orange-900/20 to-transparent">
-                    <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-orange-500 flex items-center gap-3">
-                        <Swords className="h-8 w-8" />
-                        Wallet Unseal
+                <DialogHeader className="p-6 pt-8 border-b border-zinc-800 bg-gradient-to-b from-zinc-900/50 to-transparent">
+                    <DialogTitle className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        <Wallet className="h-5 w-5 text-amber-400" />
+                        Connect Wallet
                     </DialogTitle>
-                    <DialogDescription className="text-gray-400 font-mono text-xs mt-2">
-                        Release your spiritual pressure to connect with the Soul Society.
+                    <DialogDescription className="text-zinc-400 text-sm mt-1">
+                        Choose a wallet provider to connect to AidBridge.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="p-6 space-y-4">
+                <div className="p-4 space-y-2">
                     {wallets.map((wallet) => (
                         <button
                             key={wallet.id}
                             onClick={() => handleConnect(wallet.id)}
                             disabled={isConnecting}
-                            className="group relative w-full p-4 bg-zinc-900 border border-zinc-800 hover:border-orange-500 transition-all duration-300 disabled:opacity-50 text-left overflow-hidden"
+                            className="group w-full p-4 bg-zinc-900/50 border border-zinc-800 hover:border-amber-500/50 rounded-md transition-all duration-200 disabled:opacity-50 text-left"
                         >
-                            <div className="absolute inset-0 bg-orange-600/10 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500" />
-
-                            <div className="flex items-center gap-4 relative z-10">
-                                <div className="p-2 bg-black border border-zinc-700 group-hover:border-orange-500 transition-colors">
-                                    <wallet.icon className="h-6 w-6 text-zinc-500 group-hover:text-orange-500" />
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-zinc-950 border border-zinc-700 group-hover:border-amber-500/50 rounded-md transition-colors">
+                                    <wallet.icon className="h-5 w-5 text-zinc-400 group-hover:text-amber-400 transition-colors" />
                                 </div>
                                 <div>
-                                    <div className="font-bold text-lg group-hover:text-orange-400 transition-colors uppercase italic">
+                                    <div className="font-semibold text-white group-hover:text-amber-400 transition-colors">
                                         {wallet.name}
                                     </div>
-                                    <div className="text-xs text-zinc-500 font-mono">
+                                    <div className="text-xs text-zinc-500">
                                         {wallet.description}
                                     </div>
                                 </div>
@@ -106,26 +104,26 @@ export function BleachWalletSelector({ isOpen, onClose }: BleachWalletSelectorPr
                 </div>
 
                 {error && (
-                    <div className="px-6 pb-6 mt-[-10px]">
-                        <div className="p-3 bg-red-950/30 border border-red-900 text-red-400 text-xs font-mono">
-                            [ERROR]: {error}
+                    <div className="px-4 pb-4">
+                        <div className="p-3 bg-red-950/20 border border-red-900/50 rounded-md text-red-400 text-xs">
+                            {error}
                         </div>
                     </div>
                 )}
 
                 {isConnecting && (
-                    <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
+                    <div className="absolute inset-0 bg-zinc-950/90 flex items-center justify-center z-50 rounded-lg">
                         <div className="text-center">
-                            <Loader2 className="h-12 w-12 animate-spin text-orange-500 mx-auto mb-4" />
-                            <div className="text-orange-500 font-black italic uppercase tracking-widest animate-pulse">
-                                Resonance in progress...
+                            <Loader2 className="h-10 w-10 animate-spin text-amber-400 mx-auto mb-4" />
+                            <div className="text-amber-400 font-medium text-sm">
+                                Connecting wallet...
                             </div>
                         </div>
                     </div>
                 )}
 
-                <div className="p-4 bg-zinc-900/50 border-t border-zinc-800 text-[10px] text-zinc-600 uppercase tracking-widest text-center font-bold">
-                    Secure Seireitei Protocol v2.0
+                <div className="p-3 bg-zinc-900/30 border-t border-zinc-800 text-[10px] text-zinc-600 text-center tracking-wide">
+                    Secured by Stellar Network
                 </div>
             </DialogContent>
         </Dialog>
