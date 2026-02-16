@@ -11,7 +11,7 @@ import { NGOSendPaymentModal } from "@/components/ngo-send-payment-modal"
 import { Plus, Upload, CheckCircle2, Clock, Loader2, Send } from "lucide-react"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/redux/store"
-import { apiService, type Post } from "@/lib/api-service"
+import { getPosts, getDonations, type Post } from "@/lib/api-service"
 
 // Simple chart component to avoid recharts SSR issues
 const SimpleChart = ({ data }: { data: any[] }) => {
@@ -23,16 +23,16 @@ const SimpleChart = ({ data }: { data: any[] }) => {
         {data.map((item, index) => (
           <div key={index} className="flex flex-col items-center flex-1">
             <div
-              className="w-full bg-blue-500 rounded-t"
+              className="w-full bg-amber-500 rounded-t-md"
               style={{
                 height: `${(item.value / maxValue) * 200}px`,
                 minHeight: '4px'
               }}
             />
-            <div className="text-xs text-muted-foreground mt-2 text-center">
+            <div className="text-xs text-zinc-500 mt-2 text-center">
               {item.name}
             </div>
-            <div className="text-xs font-medium">
+            <div className="text-xs font-medium text-zinc-300">
               {item.value}
             </div>
           </div>
@@ -72,26 +72,23 @@ export default function NGODashboardPage() {
     const loadDashboardData = async () => {
       try {
         setIsLoading(true)
-        const postsResponse = await apiService.getPosts()
+        const postsResponse = await getPosts()
         if (postsResponse.success) {
-          // Filter posts for this NGO
           const ngoPosts = postsResponse.data.filter((post: Post) => post.NgoRef === ngoProfile?.id)
           setPosts(ngoPosts)
 
-          // Calculate stats from posts (CollectedAmount is already in INR from backend)
           const totalRaised = ngoPosts.reduce((sum, post) => sum + (post.CollectedAmount || 0), 0)
-          const fundsUsed = Math.floor(totalRaised * 0.68) // Mock calculation - you can track actual expenses
+          const fundsUsed = Math.floor(totalRaised * 0.68)
           const remainingBalance = totalRaised - fundsUsed
 
           setStats({
-            totalDonations: totalRaised,  // Total raised in INR
-            fundsUsed,                    // Funds used in INR
-            remainingBalance,             // Remaining in INR
+            totalDonations: totalRaised,
+            fundsUsed,
+            remainingBalance,
             verifiedProjects: ngoPosts.length,
           })
 
-          // Load donations for this NGO's posts (optional - for detailed view)
-          const allDonationsResponse = await apiService.getDonations()
+          const allDonationsResponse = await getDonations()
           if (allDonationsResponse.success) {
             const ngoPostIds = ngoPosts.map(p => p._id)
             const ngoDonations = allDonationsResponse.data.filter((d: any) =>
@@ -114,16 +111,15 @@ export default function NGODashboardPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Redirecting to login...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-amber-400" />
+          <p className="text-zinc-400">Redirecting to login...</p>
         </div>
       </div>
     )
   }
 
-  // Convert posts to task format with real donation data
   const tasks = posts.map(post => {
     const taskDonations = donations.filter(d => d.postIDs === post._id)
     const totalRaised = taskDonations.reduce((sum, d) => sum + (d.Amount || 0), 0)
@@ -147,101 +143,100 @@ export default function NGODashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-zinc-950">
       <Header />
 
       <div className="py-8 md:py-12 px-4">
         <div className="mx-auto max-w-6xl">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-12">
-            <div className="flex items-center gap-4">
-              <div className="w-2 h-10 bg-orange-600" />
-              <h1 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">Command Center</h1>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-8 bg-amber-500 rounded-full" />
+              <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">NGO Dashboard</h1>
             </div>
             <Button
               onClick={() => setIsCreateTaskOpen(true)}
-              className="bg-orange-600 hover:bg-orange-700 text-black font-black uppercase italic rounded-none tracking-widest h-14 skew-x-[-12deg] px-8 w-full md:w-auto"
+              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-md px-6 h-11 w-full md:w-auto"
             >
-              <span className="skew-x-[12deg]">Deploy Division Order</span>
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Task
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <Card className="p-8 bg-zinc-950 border-zinc-900 rounded-none text-center group hover:border-orange-500/50 transition-all">
-              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-2">Spiritual Infusion</p>
-              <p className="text-3xl font-black text-white italic tracking-tighter">₹{stats.totalDonations.toLocaleString()}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            <Card className="p-6 bg-zinc-900/50 border-zinc-800 rounded-lg text-center hover:border-amber-500/30 transition-all">
+              <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide mb-2">Total Donations</p>
+              <p className="text-2xl font-bold text-white tracking-tight">₹{stats.totalDonations.toLocaleString()}</p>
             </Card>
-            <Card className="p-8 bg-zinc-950 border-zinc-900 rounded-none text-center group hover:border-orange-500/50 transition-all">
-              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-2">Energy Manifested</p>
-              <p className="text-3xl font-black text-orange-500 italic tracking-tighter">₹{stats.fundsUsed.toLocaleString()}</p>
+            <Card className="p-6 bg-zinc-900/50 border-zinc-800 rounded-lg text-center hover:border-amber-500/30 transition-all">
+              <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide mb-2">Funds Deployed</p>
+              <p className="text-2xl font-bold text-amber-400 tracking-tight">₹{stats.fundsUsed.toLocaleString()}</p>
             </Card>
-            <Card className="p-8 bg-zinc-950 border-zinc-900 rounded-none text-center group hover:border-orange-500/50 transition-all">
-              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-2">Available Reiatsu</p>
-              <p className="text-3xl font-black text-white italic tracking-tighter">
-                ₹{stats.remainingBalance.toLocaleString()}
-              </p>
+            <Card className="p-6 bg-zinc-900/50 border-zinc-800 rounded-lg text-center hover:border-amber-500/30 transition-all">
+              <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide mb-2">Available Balance</p>
+              <p className="text-2xl font-bold text-white tracking-tight">₹{stats.remainingBalance.toLocaleString()}</p>
             </Card>
-            <Card className="p-8 bg-zinc-950 border-zinc-900 rounded-none text-center group hover:border-orange-500/50 transition-all">
-              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-2">Active Orders</p>
-              <p className="text-3xl font-black text-orange-500 italic tracking-tighter">{stats.verifiedProjects}</p>
+            <Card className="p-6 bg-zinc-900/50 border-zinc-800 rounded-lg text-center hover:border-amber-500/30 transition-all">
+              <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide mb-2">Active Tasks</p>
+              <p className="text-2xl font-bold text-amber-400 tracking-tight">{stats.verifiedProjects}</p>
             </Card>
           </div>
 
           {/* Chart */}
-          <Card className="p-8 bg-zinc-950 border-zinc-900 rounded-none mb-12">
-            <h2 className="text-[10px] font-black uppercase italic tracking-widest text-zinc-500 mb-8 border-b border-zinc-900 pb-4">Energy Flow Analysis</h2>
+          <Card className="p-6 bg-zinc-900/50 border-zinc-800 rounded-lg mb-10">
+            <h2 className="text-sm font-semibold text-zinc-400 mb-6 border-b border-zinc-800 pb-3">Donation Flow</h2>
             <SimpleChart data={chartData} />
-            <div className="flex justify-center gap-8 mt-8">
+            <div className="flex justify-center gap-8 mt-6">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Inflow</span>
+                <div className="w-2.5 h-2.5 bg-amber-500 rounded-full"></div>
+                <span className="text-xs text-zinc-500">Inflow</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Expenditure</span>
+                <div className="w-2.5 h-2.5 bg-zinc-600 rounded-full"></div>
+                <span className="text-xs text-zinc-500">Expenditure</span>
               </div>
             </div>
           </Card>
 
           {/* Tasks Management */}
-          <Card className="p-8 bg-zinc-950 border-zinc-900 rounded-none">
-            <h2 className="text-[10px] font-black uppercase italic tracking-widest text-zinc-500 mb-8 border-b border-zinc-900 pb-4">Tactical Manifest</h2>
+          <Card className="p-6 bg-zinc-900/50 border-zinc-800 rounded-lg">
+            <h2 className="text-sm font-semibold text-zinc-400 mb-6 border-b border-zinc-800 pb-3">Task List</h2>
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-12 gap-4">
-                <Loader2 className="h-10 w-10 animate-spin text-orange-600" />
-                <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Gathering intelligence...</span>
+                <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+                <span className="text-sm text-zinc-500">Loading tasks...</span>
               </div>
             ) : tasks.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-zinc-500 font-bold uppercase italic tracking-widest text-xs mb-8">No active orders in the manifest</p>
+                <p className="text-zinc-500 text-sm mb-6">No active tasks yet</p>
                 <Button
                   onClick={() => setIsCreateTaskOpen(true)}
-                  className="bg-zinc-900 hover:bg-orange-600 text-white hover:text-black border border-zinc-800 hover:border-orange-600 font-black uppercase italic rounded-none skew-x-[-12deg] h-14 px-8"
+                  className="bg-zinc-800 hover:bg-amber-500 text-white hover:text-black border border-zinc-700 hover:border-amber-500 font-semibold rounded-md px-6"
                 >
-                  <span className="skew-x-[12deg]">Initiate First Deployment</span>
+                  Create Your First Task
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {tasks.map((task) => (
                   <div
                     key={task.id}
-                    className="bg-black border border-zinc-900 rounded-none p-6 flex flex-col md:flex-row justify-between md:items-center gap-6 hover:border-orange-500/30 transition-all group"
+                    className="bg-zinc-950 border border-zinc-800 rounded-md p-5 flex flex-col md:flex-row justify-between md:items-center gap-4 hover:border-amber-500/20 transition-all group"
                   >
-                    <div className="flex-1 space-y-2">
-                      <h3 className="text-xl font-black text-white italic uppercase tracking-tighter group-hover:text-orange-500 transition-colors">{task.title}</h3>
-                      <div className="flex gap-4 text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-600">
-                        <span>RAISED: ₹{task.raised.toLocaleString()}</span>
-                        <span className="text-zinc-800">|</span>
-                        <span>GOAL: ₹{task.goal.toLocaleString()}</span>
-                        <span className="text-zinc-800">|</span>
-                        <span>{task.proofCount} SIGNATURES</span>
+                    <div className="flex-1 space-y-1.5">
+                      <h3 className="text-lg font-semibold text-white tracking-tight group-hover:text-amber-400 transition-colors">{task.title}</h3>
+                      <div className="flex gap-4 text-xs text-zinc-500">
+                        <span>Raised: ₹{task.raised.toLocaleString()}</span>
+                        <span className="text-zinc-700">|</span>
+                        <span>Goal: ₹{task.goal.toLocaleString()}</span>
+                        <span className="text-zinc-700">|</span>
+                        <span>{task.proofCount} donations</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="flex items-center gap-3 w-full md:w-auto">
                       {task.status === "active" ? (
-                        <div className="w-2 h-2 bg-orange-500 animate-pulse rounded-full" />
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
                       ) : (
-                        <CheckCircle2 className="h-4 w-4 text-orange-600" />
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
                       )}
                       <div className="flex gap-2 flex-1 md:flex-none">
                         <Button
@@ -251,11 +246,10 @@ export default function NGODashboardPage() {
                             setSelectedTask(task)
                             setIsSendPaymentOpen(true)
                           }}
-                          className="rounded-none bg-black border-zinc-800 text-[10px] font-black uppercase italic tracking-widest skew-x-[-12deg] flex-1 md:flex-none hover:bg-zinc-900 transition-colors"
+                          className="rounded-md bg-zinc-950 border-zinc-700 text-xs font-medium flex-1 md:flex-none hover:bg-zinc-800 hover:text-white transition-colors"
                         >
-                          <span className="skew-x-[12deg] flex items-center gap-2">
-                            Manifest Resource
-                          </span>
+                          <Send className="h-3 w-3 mr-1.5" />
+                          Send Payment
                         </Button>
                         <Button
                           variant="outline"
@@ -264,11 +258,10 @@ export default function NGODashboardPage() {
                             setSelectedTask(task)
                             setIsUploadProofOpen(true)
                           }}
-                          className="rounded-none bg-black border-zinc-800 text-[10px] font-black uppercase italic tracking-widest skew-x-[-12deg] flex-1 md:flex-none hover:bg-orange-600 hover:text-black hover:border-orange-600 transition-colors"
+                          className="rounded-md bg-zinc-950 border-zinc-700 text-xs font-medium flex-1 md:flex-none hover:bg-amber-500 hover:text-black hover:border-amber-500 transition-colors"
                         >
-                          <span className="skew-x-[12deg] flex items-center gap-2">
-                            Forge Proof
-                          </span>
+                          <Upload className="h-3 w-3 mr-1.5" />
+                          Upload Proof
                         </Button>
                       </div>
                     </div>
