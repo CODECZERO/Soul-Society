@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { connectDB } from './util/appStartup.util.js';
 import routes from './routes/index.routes.js';
+import logger, { httpLogger } from './util/logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -17,18 +18,20 @@ if (!process.env.FRONTEND_URL) {
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      const allowedOrigins = process.env.FRONTEND_URL?.split(',') || [];
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
 
-// Request logging middleware (Cleaned for production)
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  }
-  next();
-});
+// HTTP request logging via winston
+app.use(httpLogger);
 
 // Custom JSON parser with better error handling
 app.use((req, res, next) => {
@@ -43,9 +46,7 @@ app.use((req, res, next) => {
       try {
         JSON.parse(buf.toString());
       } catch (err) {
-        console.error('JSON Parse Error:', err.message);
-        console.error('Request URL:', req.url);
-        console.error('Request body:', buf.toString().substring(0, 200));
+        logger.error('JSON Parse Error', { error: err.message, url: req.url, body: buf.toString().substring(0, 200) });
         throw new Error('Invalid JSON format');
       }
     },
@@ -69,8 +70,7 @@ app.get('/health', (req, res) => {
 
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error occurred:', err.message);
-  console.error('Stack trace:', err.stack);
+  logger.error('Unhandled error', { message: err.message, stack: err.stack, url: req.originalUrl, method: req.method });
 
   // Handle JSON parsing errors specifically
   if (err instanceof SyntaxError && err.message.includes('JSON')) {
@@ -91,7 +91,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   }
 
   // Handle other errors
-  res.status(500).json({
+  return res.status(500).json({
     success: false,
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
@@ -106,7 +106,9 @@ app.use((req, res) => {
   });
 });
 
-// Connect to database
-connectDB();
+// Connect to database only if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
 
 export default app;
