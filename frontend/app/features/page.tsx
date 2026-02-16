@@ -53,8 +53,7 @@ export default function FeaturesPage() {
           verifiedNGOs: Math.floor(posts.length / 3), // Mock calculation
         })
       } catch (err) {
-        console.error("Error loading stats:", err)
-      } finally {
+        } finally {
         setIsLoading(false)
       }
     }

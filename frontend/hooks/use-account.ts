@@ -24,8 +24,7 @@ export function useAccount() {
           }
         }
       } catch (error) {
-        console.error("Error getting Freighter account:", error)
-      } finally {
+        } finally {
         setIsLoading(false)
       }
     }

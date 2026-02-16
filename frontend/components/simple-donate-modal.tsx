@@ -45,7 +45,7 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
 
   // Get task ID from different possible field names
   const getTaskId = () => {
-    console.log("Task object:", task) // Debug log
+    // Debug log
     return task?._id || task?.id || task?.Id || ""
   }
 
@@ -80,11 +80,7 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
     setError("")
 
     try {
-      console.log("Starting donation transaction:", {
-        taskId,
-        receiverAddress,
-        amount,
-        stellarAmount: stellarAmount.toFixed(7),
+      ,
         senderPublicKey: publicKey
       })
 
@@ -118,8 +114,7 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
       const message = err instanceof Error ? err.message : "Transaction failed"
       setError(message)
       setStep("error")
-      console.error("Donation error:", message)
-    } finally {
+      } finally {
       setIsProcessing(false)
     }
   }

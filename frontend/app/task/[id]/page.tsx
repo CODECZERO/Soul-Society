@@ -41,7 +41,6 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           const matchedPost = postsResponse.data.find((p: Post) => p._id === resolvedParams.id)
 
           if (matchedPost) {
-            console.log('Raw task data from API:', matchedPost);
 
             const needAmount = typeof matchedPost.NeedAmount === 'string'
               ? parseInt(matchedPost.NeedAmount)
@@ -82,8 +81,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 setDonations(donationsResponse.data)
               }
             } catch (err) {
-              console.log("No donations found for this task")
-            }
+              }
 
             // Fetch expenses for this task
             try {
@@ -95,8 +93,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 }
               }
             } catch (err) {
-              console.log("No expenses found for this task")
-            }
+              }
 
             // Fetch PROOFS for this task
             try {
@@ -105,14 +102,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 setProofs(proofsResponse.data)
               }
             } catch (err) {
-              console.log("No proofs found for this task")
-            }
+              }
           } else {
             throw new Error("Task not found in API")
           }
         }
       } catch (err) {
-        console.error("Error loading task data:", err)
         // Fallback to mock data
         let mockTask = mockTasks.find((t) => t.id.toString() === resolvedParams.id)
         if (!mockTask) {
@@ -386,7 +381,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                               onClick={async () => {
                                 try {
                                   if (!publicKey) return alert("Please connect wallet");
-                                  console.log("Voting Legit on-chain...");
+                                  
                                   const txResult = await submitVoteTransaction({
                                     taskId: task._id || task.id,
                                     voterWallet: publicKey,
@@ -405,7 +400,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                                     if (proofsResponse.success) setProofs(proofsResponse.data);
                                   }
                                 } catch (e) {
-                                  console.error(e);
+                                  
                                   alert("Voting failed: " + (e as Error).message);
                                 }
                               }}
@@ -419,7 +414,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                               onClick={async () => {
                                 try {
                                   if (!publicKey) return alert("Please connect wallet");
-                                  console.log("Voting Scam on-chain...");
+                                  
                                   const txResult = await submitVoteTransaction({
                                     taskId: task._id || task.id,
                                     voterWallet: publicKey,
@@ -438,7 +433,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                                     if (proofsResponse.success) setProofs(proofsResponse.data);
                                   }
                                 } catch (e) {
-                                  console.error(e);
+                                  
                                   alert("Voting failed: " + (e as Error).message);
                                 }
                               }}

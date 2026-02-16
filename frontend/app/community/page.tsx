@@ -26,7 +26,7 @@ export default function CommunityPage() {
                     setCommunities(res.data);
                 }
             } catch (error) {
-                console.error("Failed to fetch communities", error);
+                
             } finally {
                 setLoading(false);
             }

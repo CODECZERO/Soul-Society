@@ -31,8 +31,7 @@ export function UserWalletConnector({
         onConnect(publicKey)
       }
     } catch (error) {
-      console.error("Wallet connection failed:", error)
-    }
+      }
   }
 
   const handleDisconnect = () => {

@@ -34,7 +34,6 @@ export function useWallet(): WalletInfo & WalletActions {
     try {
       await dispatch(connectWallet(walletType as WalletType)).unwrap()
     } catch (error) {
-      console.error("Failed to connect wallet:", error)
       throw error
     }
   }, [dispatch])
@@ -50,7 +49,6 @@ export function useWallet(): WalletInfo & WalletActions {
       const result = await dispatch(signTransaction(transactionXDR)).unwrap()
       return result
     } catch (error) {
-      console.error("Failed to sign transaction:", error)
       throw error
     }
   }, [dispatch])
@@ -64,8 +62,7 @@ export function useWallet(): WalletInfo & WalletActions {
       const balance = await getAccountBalance(walletState.publicKey)
       dispatch(setBalance(balance))
     } catch (error) {
-      console.error("Failed to refresh balance:", error)
-    } finally {
+      } finally {
       setIsRefreshing(false)
     }
   }, [walletState.publicKey, dispatch])
@@ -146,8 +143,7 @@ export function useNetworkInfo() {
           }
         }
       } catch (error) {
-        console.error("Failed to get network info:", error)
-      }
+        }
     }
 
     getNetworkInfo()

@@ -50,12 +50,11 @@ export const connectWallet = createAsyncThunk<
       const { getAccountBalance } = await import("@/lib/stellar-utils")
       balance = await getAccountBalance(publicKey)
     } catch (error) {
-      console.warn("Balance fetch failed, continuing with 0 balance:", error)
-    }
+      }
 
     return { publicKey, balance, walletType }
   } catch (error: any) {
-    console.error("Connection failed:", error);
+    
     let message = "Failed to connect wallet";
 
     // Error handling as per Level 2 requirements
@@ -90,10 +89,8 @@ const walletSlice = createSlice({
             state.walletType = walletType as any
             state.publicKey = publicKey
             state.error = null
-            console.log('Wallet state restored from sessionStorage:', { walletType, publicKey })
-          }
+            }
         } catch (error) {
-          console.error('Error restoring wallet state:', error)
           // Clear potentially corrupted state
           if (typeof window !== 'undefined') {
             sessionStorage.removeItem('wallet_connected')
@@ -167,7 +164,7 @@ export const signTransaction = createAsyncThunk<
       const { signedTxXdr } = await kit.signTransaction(transactionXDR);
       return signedTxXdr;
     } catch (error: any) {
-      console.error("Signing failed:", error);
+      
       let message = "Failed to sign transaction";
 
       if (error.message?.includes("rejected") || error.message?.includes("denied") || error.message?.includes("declined")) {

@@ -74,7 +74,6 @@ export function DonationModal({ isOpen, onClose, task, onSuccess }: DonationModa
       }
       onClose()
     } catch (err: any) {
-      console.error("Donation error:", err)
       setError(err.message || "Failed to process donation")
     } finally {
       setLoading(false)

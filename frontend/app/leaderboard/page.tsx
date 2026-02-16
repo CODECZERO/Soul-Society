@@ -45,8 +45,7 @@ export default function LeaderboardPage() {
                 setLeaderboard(data.data)
             }
         } catch (err) {
-            console.error("Error fetching leaderboard:", err)
-        } finally {
+            } finally {
             setIsLoading(false)
         }
     }

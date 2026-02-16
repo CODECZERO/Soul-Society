@@ -20,7 +20,6 @@ export async function getExchangeRate(): Promise<number> {
     lastFetchTime = now
     return rate
   } catch (error) {
-    console.error("[v0] Failed to fetch exchange rate:", error)
     return cachedRate || FALLBACK_RATE
   }
 }

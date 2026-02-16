@@ -18,17 +18,17 @@ export function TaskDetailClient({ taskId }: TaskDetailClientProps) {
   useEffect(() => {
     const fetchTask = async () => {
       try {
-        console.log('Fetching task with ID:', taskId) // Debug log
+        // Debug log
         setLoading(true)
         const response = await postsApi.getById(taskId)
-        console.log('API response:', response) // Debug log
+        // Debug log
         if (response.success) {
           setTask(response.data)
         } else {
           setError(response.message || "Failed to fetch task")
         }
       } catch (err) {
-        console.error('Error details:', err) // Detailed error logging
+        // Detailed error logging
         setError("Failed to fetch task")
       } finally {
         setLoading(false)

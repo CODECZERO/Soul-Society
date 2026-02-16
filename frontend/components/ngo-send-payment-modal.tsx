@@ -52,10 +52,8 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
           if (uploadResponse.success) {
             cid = uploadResponse.data.cid || uploadResponse.data.hash
             setIpfsCid(cid)
-            console.log("Receipt uploaded to IPFS:", cid)
-          }
+            }
         } catch (uploadError) {
-          console.error("IPFS upload error:", uploadError)
           // Continue with "Pending" CID
         }
       }
@@ -70,8 +68,6 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
         Cid: cid,
       }
 
-      console.log("Sending payment:", paymentData)
-
       const response = await walletPay(paymentData)
 
       if (response.success) {
@@ -84,8 +80,7 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
       const message = err instanceof Error ? err.message : "Failed to send payment"
       setError(message)
       setStep("error")
-      console.error("Payment error:", err)
-    }
+      }
   }
 
   const handleClose = () => {

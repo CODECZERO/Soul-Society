@@ -29,7 +29,7 @@ class Server {
         sequence: "1",
       }
     } catch (error) {
-      console.error("Error loading account:", error);
+
       // Fallback to mock data
       return {
         id: publicKey,
@@ -121,8 +121,6 @@ export async function submitDonationTransaction(
   signTransaction: (tx: string) => Promise<string>,
 ) {
   try {
-    console.log("Starting donation transaction:", { publicKey, amount, taskId, receiverPublicKey })
-
     // Validate and format amount - Stellar requires string with max 7 decimals
     const amountNumber = parseFloat(amount)
     if (isNaN(amountNumber) || amountNumber <= 0) {
@@ -131,8 +129,6 @@ export async function submitDonationTransaction(
 
     // Format to max 7 decimal places as required by Stellar
     const formattedAmount = amountNumber.toFixed(7)
-    console.log("Formatted amount:", formattedAmount)
-
     // Validate receiver address
     if (!receiverPublicKey || receiverPublicKey.length !== 56 || !receiverPublicKey.startsWith('G')) {
       throw new Error("Invalid receiver wallet address from post data")
@@ -142,12 +138,10 @@ export async function submitDonationTransaction(
     const StellarSdk = await import('@stellar/stellar-sdk')
 
     // Step 1: Load sender account from Stellar network
-    console.log("Loading account from Stellar...")
     const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org')
     const account = await server.loadAccount(publicKey)
 
     // Step 2: Create payment transaction
-    console.log("Creating payment transaction...")
     const transaction = new StellarSdk.TransactionBuilder(account, {
       fee: StellarSdk.BASE_FEE,
       networkPassphrase: StellarSdk.Networks.TESTNET,
@@ -165,25 +159,16 @@ export async function submitDonationTransaction(
 
     // Step 3: Convert to XDR for signing
     const transactionXDR = transaction.toXDR()
-    console.log("Transaction XDR created, requesting signature...")
-
     // Step 4: Sign transaction with Freighter wallet
     const signedXDR = await signTransaction(transactionXDR)
-    console.log("Transaction signed by user")
-
     // Step 5: Parse signed transaction to get hash
     const signedTransaction = StellarSdk.TransactionBuilder.fromXDR(
       signedXDR,
       StellarSdk.Networks.TESTNET
     )
     const transactionHash = signedTransaction.hash().toString('hex')
-    console.log("Transaction hash:", transactionHash)
-
     // Step 6: Submit transaction to Stellar network
-    console.log("Submitting transaction to Stellar network...")
     const result = await server.submitTransaction(signedTransaction)
-    console.log("Transaction submitted successfully:", result)
-
     // Step 7: Send transaction data to backend for verification and storage
     const donationData = {
       TransactionId: transactionHash,
@@ -191,12 +176,9 @@ export async function submitDonationTransaction(
       Amount: parseFloat(amount),
     }
 
-    console.log("Verifying donation with backend:", donationData)
     const response = await verifyDonation(donationData)
 
     if (response.success) {
-      console.log("Donation verified and saved:", response.data)
-
       return {
         success: true,
         hash: transactionHash,
@@ -208,8 +190,6 @@ export async function submitDonationTransaction(
       throw new Error(response.message || "Donation verification failed")
     }
   } catch (error) {
-    console.error("Donation transaction error:", error)
-
     // Provide more detailed error messages
     if (error instanceof Error) {
       if (error.message.includes('op_underfunded')) {
@@ -227,18 +207,18 @@ export async function submitDonationTransaction(
 
 export async function getAccountBalance(publicKey: string) {
   try {
-    console.log("Fetching balance for:", publicKey);
+
     const response = await getWalletBalance(publicKey);
-    console.log("Balance API response:", response);
+
 
     const balances = response.data || [];
     const xlmBalance = balances.find((b: any) => b.asset === "XLM");
     const balance = xlmBalance ? Number.parseFloat(xlmBalance.balance) : 0;
 
-    console.log("Parsed balance:", balance);
+
     return balance;
   } catch (error) {
-    console.warn("Balance fetch error (using fallback):", error)
+    // Error handled
     // Fallback to mock data - return 0 to show wallet is connected but balance unavailable
     return 0;
   }
@@ -250,7 +230,7 @@ export async function createStellarAccount() {
     const response = await apiCreateStellarAccount();
     return response.data;
   } catch (error) {
-    console.error("Error creating Stellar account:", error);
+
     throw error;
   }
 }
@@ -264,8 +244,6 @@ export async function ngoWalletPayment(
   cid: string
 ) {
   try {
-    console.log("NGO wallet payment:", { receiverPublicKey, postId, amount, cid })
-
     const payData = {
       PublicKey: receiverPublicKey,
       PostId: postId,
@@ -276,13 +254,12 @@ export async function ngoWalletPayment(
     const response = await walletPay(payData);
 
     if (response.success) {
-      console.log("NGO payment successful:", response.data)
       return response.data;
     } else {
       throw new Error(response.message || "NGO payment failed")
     }
   } catch (error) {
-    console.error("Error in NGO wallet payment:", error);
+
     throw error;
   }
 }
@@ -303,7 +280,7 @@ export async function sendPaymentViaAPI(
     });
     return response.data;
   } catch (error) {
-    console.error("Error sending payment:", error);
+
     throw error;
   }
 }
@@ -322,7 +299,7 @@ export async function submitEscrowTransaction(
   signTransaction: (tx: string) => Promise<string>
 ) {
   try {
-    console.log("Starting Escrow transaction...", data);
+
 
     // 1. Get XDR from Backend
     const response = await getEscrowXdr(data);
@@ -332,9 +309,9 @@ export async function submitEscrowTransaction(
     const xdr = response.data.xdr;
 
     // 2. Sign XDR
-    console.log("Requesting signature...");
+
     const signedXDR = await signTransaction(xdr);
-    console.log("Escrow XDR signed");
+
 
     // 3. Submit to Network
     const StellarSdk = await import('@stellar/stellar-sdk');
@@ -345,11 +322,11 @@ export async function submitEscrowTransaction(
       StellarSdk.Networks.TESTNET
     );
     const transactionHash = signedTransaction.hash().toString('hex');
-    console.log("Tx Hash:", transactionHash);
 
-    console.log("Submitting Escrow Transaction...");
+
+
     const result = await server.submitTransaction(signedTransaction);
-    console.log("Escrow Transaction submitted:", result);
+
 
     // 4. Create Donation Record (Backend)
     // The XDR endpoint created the intent, but we need to confirm success to save the record
@@ -367,10 +344,10 @@ export async function submitEscrowTransaction(
     };
 
   } catch (error) {
-    console.error("Escrow transaction error:", error);
+
     // Parse Horizon error
     if ((error as any).response?.data?.extras?.result_codes) {
-      console.error("Horizon Result Codes:", (error as any).response.data.extras.result_codes);
+      // Error details captured
     }
     throw error;
   }
@@ -385,7 +362,7 @@ export async function submitVoteTransaction(
   signTransaction: (tx: string) => Promise<string>
 ) {
   try {
-    console.log("Starting Vote transaction...");
+
 
     // 1. Get XDR
     const response = await getVoteXdr(data);
@@ -407,14 +384,14 @@ export async function submitVoteTransaction(
     );
     const transactionHash = signedTransaction.hash().toString('hex');
 
-    console.log("Submitting Vote...");
+
     const result = await server.submitTransaction(signedTransaction);
-    console.log("Vote submitted:", result);
+
 
     return { success: true, hash: transactionHash };
 
   } catch (error) {
-    console.error("Vote transaction error:", error);
+
     throw error;
   }
 }
@@ -428,7 +405,7 @@ export async function submitProofTransaction(
   signTransaction: (tx: string) => Promise<string>
 ) {
   try {
-    console.log("Starting Submit Proof transaction...");
+
 
     // 1. Get XDR
     const response = await getSubmitProofXdr(data);
@@ -450,14 +427,14 @@ export async function submitProofTransaction(
     );
     const transactionHash = signedTransaction.hash().toString('hex');
 
-    console.log("Submitting Proof...");
+
     const result = await server.submitTransaction(signedTransaction);
-    console.log("Proof submitted:", result);
+
 
     return { success: true, hash: transactionHash };
 
   } catch (error) {
-    console.error("Proof transaction error:", error);
+
     throw error;
   }
 }

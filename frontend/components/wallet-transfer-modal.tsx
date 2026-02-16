@@ -84,11 +84,7 @@ export function WalletTransferModal({ isOpen, onClose, task }: WalletTransferMod
     setError("")
 
     try {
-      console.log("Starting wallet-to-wallet transfer:", {
-        taskId,
-        receiverAddress,
-        amount,
-        stellarAmount: stellarAmount.toFixed(7),
+      ,
         senderPublicKey: publicKey,
         ipfsCid
       })
@@ -117,8 +113,7 @@ export function WalletTransferModal({ isOpen, onClose, task }: WalletTransferMod
       const message = err instanceof Error ? err.message : "Wallet transfer failed"
       setError(message)
       setStep("error")
-      console.error("Wallet transfer error:", message)
-    } finally {
+      } finally {
       setIsProcessing(false)
     }
   }

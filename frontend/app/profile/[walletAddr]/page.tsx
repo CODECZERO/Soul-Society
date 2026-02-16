@@ -28,8 +28,7 @@ export default function ProfilePage() {
                 setProfile(response.data)
             }
         } catch (err) {
-            console.error("Error fetching profile:", err)
-        } finally {
+            } finally {
             setIsLoading(false)
         }
     }

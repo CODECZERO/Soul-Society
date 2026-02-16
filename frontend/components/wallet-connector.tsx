@@ -37,8 +37,7 @@ export function WalletConnector({ onConnect, onDisconnect, className }: WalletCo
       await connect(walletType)
       onConnect?.()
     } catch (error) {
-      console.error("Connection failed:", error)
-    }
+      }
   }
 
   const handleDisconnect = () => {

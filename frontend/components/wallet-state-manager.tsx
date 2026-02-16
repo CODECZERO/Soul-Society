@@ -20,8 +20,7 @@ export function WalletStateManager() {
     // Restore NGO authentication from cookies
     dispatch(checkNGOCookieThunk())
     
-    console.log('State restoration complete')
-  }, [dispatch])
+    }, [dispatch])
 
   // This component doesn't render anything
   return null

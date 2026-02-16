@@ -72,8 +72,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
             imageCid = uploadResponse.data.cid || uploadResponse.data.hash
           }
         } catch (uploadError) {
-          console.warn("Image upload failed, using placeholder")
-        } finally {
+          } finally {
           setIsUploadingImage(false)
         }
       }

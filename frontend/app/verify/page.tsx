@@ -39,7 +39,7 @@ export default function VerifyPage() {
         setVerificationResult({ error: "Proof not found on-chain" });
       }
     } catch (e) {
-      console.error(e);
+      
       setVerificationResult({ error: "Verification failed or Proof not found" });
     }
   }

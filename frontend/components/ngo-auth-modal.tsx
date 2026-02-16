@@ -34,8 +34,7 @@ export function NGOAuthModal() {
       await login(formData.email, formData.password)
       dispatch(closeAuthModal())
     } catch (error) {
-      console.error("NGO Login error:", error)
-    }
+      }
   }
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
@@ -56,8 +55,7 @@ export function NGOAuthModal() {
       })
       dispatch(closeAuthModal())
     } catch (error) {
-      console.error("NGO Signup error:", error)
-    }
+      }
   }
 
   return (

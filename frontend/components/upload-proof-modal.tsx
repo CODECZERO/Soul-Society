@@ -43,14 +43,14 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
       setStep("uploading")
 
       // 1. Upload to IPFS
-      console.log("Uploading to IPFS...");
+      
       const ipfsResponse = await uploadToIPFS(formData.file);
       if (!ipfsResponse.success || !ipfsResponse.data) {
         throw new Error("Failed to upload to IPFS");
       }
       const cid = ipfsResponse.data.Hash || ipfsResponse.data.cid || "QmMock" + Math.random().toString(16).slice(2); // Fallback if mock
       setIpfsCid(cid);
-      console.log("IPFS CID:", cid);
+      
 
       // 2. Submit Proof Transaction
       // Ensure we have the signer
@@ -58,7 +58,7 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
         throw new Error("Wallet not connected");
       }
 
-      console.log("Submitting Proof to Blockchain...");
+      
       const result = await submitProofTransaction({
         ngoPublicKey: publicKey, // The signer must be the NGO
         taskId: task.id || task._id, // Handle both id formats
@@ -67,7 +67,7 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
 
       // 3. Save to Backend (Mongo)
       if (result.success && result.hash) {
-        console.log("Saving Proof to Backend...");
+        
         await submitProof(task.id || task._id, {
           submitter: publicKey,
           cid: cid,
@@ -80,7 +80,7 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
 
       setStep("success")
     } catch (error) {
-      console.error("Proof submission failed:", error);
+      
       alert("Failed to submit proof: " + (error as Error).message);
       setStep("form"); // Go back to form on error
     }

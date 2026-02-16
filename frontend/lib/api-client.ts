@@ -123,7 +123,7 @@ class ApiClient {
 
       return data;
     } catch (error) {
-      console.error(`API Error [${endpoint}]:`, error);
+      
       throw error;
     }
   }

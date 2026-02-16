@@ -31,7 +31,7 @@ export const clearWalletData = () => {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.warn(`Error removing ${key} from localStorage:`, error);
+      
     }
   });
 
@@ -39,7 +39,7 @@ export const clearWalletData = () => {
   try {
     sessionStorage.clear();
   } catch (error) {
-    console.warn('Error clearing sessionStorage:', error);
+    
   }
 
   // Clear cookies
@@ -58,16 +58,16 @@ export const clearWalletData = () => {
     try {
       document.cookie = `${cookie}=; ${cookieOptions}`;
     } catch (error) {
-      console.warn(`Error clearing cookie ${cookie}:`, error);
+      
     }
   });
 
   // Clear Freighter specific data
   if (window.freighter) {
     try {
-      window.freighter.disconnect().catch(console.warn);
+      window.freighter.disconnect().catch(() => {});
     } catch (error) {
-      console.warn('Error disconnecting Freighter:', error);
+      
     }
   }
 
@@ -75,7 +75,7 @@ export const clearWalletData = () => {
   try {
     window.removeEventListener('freighter:disconnect', clearWalletData);
   } catch (error) {
-    console.warn('Error removing event listeners:', error);
+    
   }
 
   // Clear any indexedDB data
@@ -83,10 +83,10 @@ export const clearWalletData = () => {
     try {
       const dbs = ['freighter', 'wallet-connector'];
       dbs.forEach(dbName => {
-        window.indexedDB.deleteDatabase(dbName).catch(console.warn);
+        window.indexedDB.deleteDatabase(dbName).catch(() => {});
       });
     } catch (error) {
-      console.warn('Error clearing IndexedDB:', error);
+      
     }
   }
 };

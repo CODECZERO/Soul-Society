@@ -65,7 +65,7 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
 
   const handleConfirm = async () => {
     if (!isConnected || !publicKey || !walletType) {
-      console.error('Wallet not connected or missing public key');
+      
       return;
     }
 

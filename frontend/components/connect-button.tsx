@@ -33,7 +33,6 @@ export function ConnectButton({
         setWalletSelectorOpen(true)
       }
     } catch (error) {
-      console.error("Connection failed:", error)
       // Show wallet selector as fallback
       setWalletSelectorOpen(true)
     }

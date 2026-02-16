@@ -36,8 +36,7 @@ export function DonationsList({ postId }: DonationsListProps) {
         }
       } catch (err) {
         setError("Failed to fetch donations")
-        console.error("Error fetching donations:", err)
-      } finally {
+        } finally {
         setLoading(false)
       }
     }

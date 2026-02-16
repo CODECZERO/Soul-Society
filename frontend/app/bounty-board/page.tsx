@@ -30,8 +30,7 @@ export default function BountyBoardPage() {
                 setPosts(bounties)
             }
         } catch (err) {
-            console.error("Error loading bounties:", err)
-        } finally {
+            } finally {
             setIsLoading(false)
         }
     }

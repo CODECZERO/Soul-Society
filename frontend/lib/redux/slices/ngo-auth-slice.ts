@@ -148,13 +148,11 @@ export const checkNGOCookieThunk = createAsyncThunk(
         try {
           return { ...initialState, isAuthenticated: true, ngoProfile: JSON.parse(profile) }
         } catch (parseError) {
-          console.error('Error parsing stored NGO profile:', parseError)
           localStorage.removeItem('ngo_profile')
         }
       }
     } catch (error) {
-      console.error('Error checking auth state:', error)
-    }
+      }
 
     return initialState
   },
@@ -233,7 +231,6 @@ const ngoAuthSlice = createSlice({
             state.ngoProfile = profile
             state.isAuthenticated = true
           } catch (err) {
-            console.error("Error parsing NGO profile from cookie:", err)
             // Clear corrupted cookie
             document.cookie = "ngo_profile=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"
           }

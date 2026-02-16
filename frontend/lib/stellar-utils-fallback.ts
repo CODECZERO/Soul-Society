@@ -9,28 +9,18 @@ export async function submitDonationTransactionFallback(
   signTransaction: (tx: string) => Promise<string>,
 ) {
   try {
-    console.log('Creating mock donation transaction:', {
-      senderPublicKey,
-      receiverAddress,
-      amount,
-      taskId
-    })
-
     // Simulate transaction processing time
     await new Promise(resolve => setTimeout(resolve, 2000))
 
     // Generate mock transaction hash
     const mockHash = `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
-    console.log('Mock transaction submitted successfully:', { hash: mockHash })
-
     return {
       success: true,
       hash: mockHash,
       ledger: Math.floor(Math.random() * 1000000),
     }
   } catch (error) {
-    console.error('Mock transaction error:', error)
     throw error
   }
 }
@@ -43,7 +33,6 @@ export async function getAccountBalanceFallback(publicKey: string) {
     // Return mock balance
     return Math.random() * 1000
   } catch (error) {
-    console.error('Mock balance fetch error:', error)
     return 0
   }
 }
@@ -59,7 +48,6 @@ export async function createStellarAccountFallback() {
       secretKey: mockSecretKey,
     }
   } catch (error) {
-    console.error('Mock account creation error:', error)
     throw error
   }
 }

@@ -119,8 +119,7 @@ export default function NGODashboardPage() {
           }
         }
       } catch (error) {
-        console.error("Error loading dashboard data:", error)
-      } finally {
+        } finally {
         setIsLoading(false)
       }
     }

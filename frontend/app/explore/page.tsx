@@ -55,7 +55,6 @@ export default function ExplorePage() {
         throw new Error('Invalid response format')
       }
     } catch (err) {
-      console.error("Error loading posts:", err)
       setError("Failed to load campaigns. Showing cached data.")
 
       const cacheKey = 'cached_posts';

@@ -42,8 +42,7 @@ export default function Home() {
         })
       }
     } catch (err) {
-      console.error("Error loading stats:", err)
-    }
+      }
   }
 
   const loadPosts = async () => {
@@ -54,7 +53,6 @@ export default function Home() {
         setPosts(response.data)
       }
     } catch (err) {
-      console.error("Error loading posts:", err)
       setError("Failed to load campaigns")
       setPosts([])
     } finally {

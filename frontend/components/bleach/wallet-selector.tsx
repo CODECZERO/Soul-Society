@@ -50,8 +50,7 @@ export function BleachWalletSelector({ isOpen, onClose }: BleachWalletSelectorPr
             await dispatch(connectWallet(walletId)).unwrap()
             onClose()
         } catch (err) {
-            console.error("Failed to connect:", err)
-        }
+            }
     }
 
     return (

@@ -56,13 +56,13 @@ export const logger = {
 
     warn(message: string, data?: any) {
         if (!shouldLog('warn')) return;
-        console.warn(formatMessage('warn', message), data || '');
+        , data || '');
         addToBuffer('warn', message, data);
     },
 
     error(message: string, data?: any) {
         if (!shouldLog('error')) return;
-        console.error(formatMessage('error', message), data || '');
+        , data || '');
         addToBuffer('error', message, data);
     },
 

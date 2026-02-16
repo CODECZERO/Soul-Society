@@ -49,8 +49,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to connect wallet"
       setError(message)
-      console.error("[v0] Wallet connection error:", message)
-    } finally {
+      } finally {
       setIsConnecting(false)
     }
   }, [])

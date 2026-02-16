@@ -42,7 +42,6 @@ export default function CreatePostPage() {
           const account = await createStellarAccount()
           setWalletAddress(account.publicKey)
         } catch (err) {
-          console.error("Failed to create wallet:", err)
           setError("Failed to create wallet. Please try again.")
         }
       }
@@ -116,8 +115,7 @@ export default function CreatePostPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create post"
       setError(message)
-      console.error("Create post error:", err)
-    } finally {
+      } finally {
       setIsProcessing(false)
     }
   }

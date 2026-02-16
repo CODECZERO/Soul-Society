@@ -27,8 +27,7 @@ export function StellarPriceDisplay({ amount, showPrice = false, onPriceLoad }: 
           onPriceLoad?.(data.stellar.inr)
         }
       } catch (error) {
-        console.error("Error fetching Stellar price:", error)
-      } finally {
+        } finally {
         setIsLoading(false)
       }
     }

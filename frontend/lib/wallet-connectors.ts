@@ -19,8 +19,6 @@ export const walletConnectors = {
     },
     connect: async () => {
       try {
-        console.log("Using Freighter SDK")
-        
         // Check if Freighter is connected
         const connectedResult = await freighterIsConnected()
         if (connectedResult.error || !connectedResult.isConnected) {
@@ -29,44 +27,34 @@ export const walletConnectors = {
         
         // Request access - this will prompt user to allow the app
         const response = await freighterRequestAccess()
-        console.log("Freighter response:", response)
-        
         if (response.error) {
           throw new Error(response.error || "User denied access to Freighter")
         }
         
         if (response.address) {
-          console.log("Connected with public key:", response.address)
           return response.address
         }
         
         throw new Error("No address returned from Freighter")
       } catch (error) {
-        console.error("Freighter SDK error:", error)
         throw error
       }
     },
     signTransaction: async (tx: string) => {
-      console.log("Signing transaction with Freighter SDK:", tx)
-      
       try {
         const response = await freighterSignTransaction(tx, {
           networkPassphrase: "Test SDF Network ; September 2015",
         })
-        console.log("Freighter sign response:", response)
-        
         if (response.error) {
           throw new Error(response.error || "Transaction signing failed")
         }
         
         if (response.signedTxXdr) {
-          console.log("Transaction signed successfully")
           return response.signedTxXdr
         }
         
         throw new Error("No signed transaction returned")
       } catch (error) {
-        console.error("Freighter sign error:", error)
         throw error
       }
     },
