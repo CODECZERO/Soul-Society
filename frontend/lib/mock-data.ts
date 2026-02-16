@@ -158,4 +158,6 @@ export const mockDonors = [
   { id: 5, address: "0xqrst...7890", totalDonated: 5000, donationCount: 2 },
 ]
 
-export const categories = ["All", "Education", "Health", "Relief", "Environment"]
+import { TASK_CATEGORIES } from "./constants";
+
+export const categories = ["All", ...TASK_CATEGORIES];
