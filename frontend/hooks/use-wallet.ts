@@ -5,6 +5,8 @@ import { useSelector, useDispatch } from "react-redux"
 import type { RootState, AppDispatch } from "@/lib/redux/store"
 import { connectWallet, disconnectWallet, signTransaction, setBalance } from "@/lib/redux/slices/wallet-slice"
 import { getAccountBalance } from "@/lib/stellar-utils"
+import { NETWORK_LABELS } from '@/lib/constants'
+import type { WalletType } from "@/lib/wallet-types" // Assuming correct path based on find_by_name result
 
 export interface WalletInfo {
   isConnected: boolean
@@ -30,7 +32,7 @@ export function useWallet(): WalletInfo & WalletActions {
   // Connect wallet
   const connect = useCallback(async (walletType: 'freighter' | 'albedo' | 'rabet') => {
     try {
-      await dispatch(connectWallet(walletType)).unwrap()
+      await dispatch(connectWallet(walletType as WalletType)).unwrap()
     } catch (error) {
       console.error("Failed to connect wallet:", error)
       throw error
@@ -83,7 +85,7 @@ export function useWallet(): WalletInfo & WalletActions {
     isConnecting: walletState.isConnecting || isRefreshing,
     error: walletState.error,
     walletType: walletState.walletType,
-    
+
     // Actions
     connect,
     disconnect,
@@ -135,7 +137,13 @@ export function useNetworkInfo() {
         const result = await getNetwork()
         if (!result.error) {
           setNetwork(result.network)
-          setIsTestnet(result.network === 'TESTNET')
+
+          // Basic check if it contains TESTNET
+          if (result.network === 'TESTNET') {
+            setIsTestnet(true)
+          } else {
+            setIsTestnet(false)
+          }
         }
       } catch (error) {
         console.error("Failed to get network info:", error)
