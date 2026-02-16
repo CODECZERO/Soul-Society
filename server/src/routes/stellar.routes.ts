@@ -7,6 +7,8 @@ import {
   deleteStellarAccount,
   saveToSmartContract,
   getLatestContractData,
+  getAccountTransactions,
+  getTransactionOps,
 } from '../controler/stellar.controler.js';
 
 const router = Router();
@@ -31,5 +33,11 @@ router.post('/smart-contract', saveToSmartContract);
 
 // POST /api/stellar/get-latest-data - Get latest data from smart contract
 router.post('/get-latest-data', getLatestContractData);
+
+// GET /api/stellar/transactions/:publicKey - Get transaction history
+router.get('/transactions/:publicKey', getAccountTransactions);
+
+// GET /api/stellar/operations/:txHash - Get transaction operations
+router.get('/operations/:txHash', getTransactionOps);
 
 export default router;
