@@ -39,12 +39,7 @@ jobs:
     defaults:
       run:
         working-directory: ./server
-    services:
-      # If you need a database (e.g. MongoDB) for tests, uncomment:
-      # mongodb:
-      #   image: mongo:latest
-      #   ports:
-      #     - 27017:27017
+
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js 20
