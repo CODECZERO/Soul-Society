@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
-import { apiService } from "@/lib/api-service"
+import { verifyDonation, getDonations } from "@/lib/api-service"
 
 interface DonationState {
   isDonating: boolean
@@ -59,7 +59,7 @@ export const processDonation = createAsyncThunk(
     try {
       const state = getState() as any
       const exchangeRate = state.donation.exchangeRate
-      
+
       // Convert INR to XLM if needed
       let xlmAmount = amount
       if (currency === 'INR') {
@@ -67,21 +67,34 @@ export const processDonation = createAsyncThunk(
       }
 
       // Import and use Stellar utils
-      const { submitDonationTransaction } = await import("@/lib/stellar-utils")
-      
-      // Submit transaction with receiver's wallet address from post data
-      const result = await submitDonationTransaction(
-        publicKey,
-        xlmAmount.toString(),
-        taskId,
-        receiverPublicKey,  // Pass NGO's wallet address
+      const { submitEscrowTransaction } = await import("@/lib/stellar-utils")
+
+      // Calculate Escrow Parameters
+      // 50% locked, 50% immediate (but contract handles the split, we send total)
+      // Actually contract takes 50% to a separate bucket?
+      // Contract `create_escrow` logic: 
+      // User sends `total_amount` to contract address? No, `create_escrow` transfers from User to Contract.
+      // We need to pass `locked_amount` which is 50% usually.
+      const lockedAmount = xlmAmount * 0.5;
+      const deadline = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days from now
+
+      // Submit Escrow Transaction
+      const result = await submitEscrowTransaction(
+        {
+          donorPublicKey: publicKey,
+          ngoPublicKey: receiverPublicKey,
+          totalAmount: xlmAmount,
+          lockedAmount: lockedAmount,
+          taskId: taskId,
+          deadline: deadline
+        },
         signTransaction
       )
 
       if (result.success) {
         // Verify donation with backend - send amount in INR for consistency
         const inrAmount = currency === 'INR' ? amount : amount * exchangeRate
-        await apiService.verifyDonation({
+        await verifyDonation({
           TransactionId: result.hash,
           postID: taskId,
           Amount: inrAmount, // Send INR amount to backend
@@ -107,7 +120,7 @@ export const fetchDonationHistory = createAsyncThunk(
   "donation/fetchDonationHistory",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await apiService.getDonations()
+      const response = await getDonations()
       if (response.success) {
         return response.data
       } else {
@@ -161,11 +174,11 @@ const donationSlice = createSlice({
   },
 })
 
-export const { 
-  setCurrentDonation, 
-  clearCurrentDonation, 
-  clearDonationError, 
-  setExchangeRate 
+export const {
+  setCurrentDonation,
+  clearCurrentDonation,
+  clearDonationError,
+  setExchangeRate
 } = donationSlice.actions
 
 export default donationSlice.reducer
