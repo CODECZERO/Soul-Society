@@ -47,7 +47,9 @@ app.use((req, res, next) => {
         JSON.parse(buf.toString());
       } catch (err) {
         logger.error('JSON Parse Error', { error: err.message, url: req.url, body: buf.toString().substring(0, 200) });
-        throw new Error('Invalid JSON format');
+        const error = new Error('Invalid JSON format');
+        (error as any).statusCode = 400;
+        throw error;
       }
     },
   })(req, res, next);
