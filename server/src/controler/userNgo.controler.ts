@@ -32,14 +32,14 @@ export interface userLoginData {
 }
 
 // ─── Token Generation Helper ───────────────────────────────────────
-const generateTokens = (ngoId: string, email: string) => {
+const generateTokens = (ngoId: string, email: string, walletAddr: string, NgoName: string) => {
   const accessToken = jwt.sign(
-    { id: ngoId, email },
+    { id: ngoId, email, walletAddr, NgoName },
     process.env.ATS as string,
     { expiresIn: "1d" }
   );
   const refreshToken = jwt.sign(
-    { id: ngoId, email },
+    { id: ngoId, email, walletAddr, NgoName },
     process.env.RTS as string,
     { expiresIn: "7d" }
   );
@@ -83,7 +83,12 @@ const singup = AsyncHandler(async (req: Request, res: Response) => {
     const savedNGO = await registerNGO(ngoData);
 
     // 5. Generate Tokens
-    const { accessToken, refreshToken } = generateTokens(savedNGO.id, savedNGO.email || "");
+    const { accessToken, refreshToken } = generateTokens(
+      savedNGO.id,
+      savedNGO.email || "",
+      savedNGO.walletAddress || "",
+      savedNGO.name || ""
+    );
 
     return res.status(200).json(
       new ApiResponse(
@@ -139,7 +144,12 @@ const login = AsyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, 'Email and Password required');
   }
 
-  const { accessToken, refreshToken } = generateTokens(ngo.id, ngo.email || "");
+  const { accessToken, refreshToken } = generateTokens(
+    ngo.id,
+    ngo.email || "",
+    ngo.walletAddress || "",
+    ngo.name || ""
+  );
 
   // Map to frontend expected structure
   const responseData = {
@@ -171,7 +181,12 @@ const refreshToken = AsyncHandler(async (req: Request, res: Response) => {
     const ngo = await getNGO(decoded.id);
     if (!ngo) throw new ApiError(401, 'NGO not found');
 
-    const tokens = generateTokens(ngo.id, ngo.email || "");
+    const tokens = generateTokens(
+      ngo.id,
+      ngo.email || "",
+      ngo.walletAddress || "",
+      ngo.name || ""
+    );
 
     return res.status(200).json(
       new ApiResponse(
