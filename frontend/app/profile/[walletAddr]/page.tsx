@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Header } from "@/components/header"
-import { apiService } from "@/lib/api-service"
+import { getUserProfile } from "@/lib/api-service"
 import { Sword, Zap, Shield, Trophy, History, ShieldCheck } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +23,7 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
         try {
             setIsLoading(true)
-            const response = await apiService.getUserProfile(walletAddr)
+            const response = await getUserProfile(walletAddr)
             if (response.success) {
                 setProfile(response.data)
             }
@@ -51,7 +51,7 @@ export default function ProfilePage() {
             <div className="min-h-screen bg-black">
                 <Header />
                 <div className="text-center py-48">
-                    <h2 className="text-2xl font-black text-zinc-700 uppercase italic italic tracking-widest">Reaper Record Not Found</h2>
+                    <h2 className="text-2xl font-black text-zinc-700 uppercase italic italic tracking-widest">Profile Not Found</h2>
                 </div>
             </div>
         )
@@ -105,7 +105,7 @@ export default function ProfilePage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-4xl font-black text-white italic tracking-tighter mb-2">
-                                        {profile.totalReiatsu.toLocaleString()} REI
+                                        {profile.totalReiatsu.toLocaleString()} pts
                                     </div>
                                     <div className="h-1 bg-zinc-900 w-full mb-4">
                                         <div
@@ -165,9 +165,9 @@ export default function ProfilePage() {
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2 bg-zinc-950 border border-zinc-800 px-3 py-1 skew-x-[-12deg]">
-                                                        <ShieldCheck className="h-3 w-3 text-orange-600 skew-x-[12deg]" />
-                                                        <span className="text-orange-600 text-[10px] font-black italic skew-x-[12deg]">SEALED</span>
+                                                    <div className="flex items-center gap-2 bg-zinc-950 border border-zinc-800 px-3 py-1 rounded-md">
+                                                        <ShieldCheck className="h-3 w-3 text-orange-600" />
+                                                        <span className="text-orange-600 text-[10px] font-black italic">SEALED</span>
                                                     </div>
                                                 </div>
                                             ))
@@ -180,7 +180,7 @@ export default function ProfilePage() {
 
                                     {profile.recentInfusions.length > 0 && (
                                         <div className="mt-8 border-t border-zinc-900 pt-8">
-                                            <h3 className="text-xs font-mono text-zinc-600 uppercase tracking-[0.3em] mb-6">Recent Reiatsu Infusions</h3>
+                                            <h3 className="text-xs font-mono text-zinc-600 uppercase tracking-[0.3em] mb-6">Recent Donations</h3>
                                             <div className="space-y-4 pb-8">
                                                 {profile.recentInfusions.map((infusion: any, i: number) => (
                                                     <div key={i} className="flex justify-between items-center text-sm border-b border-zinc-900/50 pb-4 last:border-0 hover:translate-x-1 transition-transform cursor-pointer">
