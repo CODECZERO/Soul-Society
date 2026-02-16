@@ -1,7 +1,8 @@
-import mongoose from 'mongoose';
-import { ngoModel } from '../model/user(Ngo).model.js';
-import { postModel } from '../model/post.model.js';
+import { seireiteiVault } from '../services/stellar/seireiteiVault.service.js';
 import { userSingupData, userLoginData } from '../controler/userNgo.controler.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { nanoid } from 'nanoid';
 
 interface userData {
   email?: string;
@@ -13,13 +14,13 @@ const findUser = async (userData: userData) => {
     if (!userData || (!userData?.email && !userData?.Id))
       throw new Error('Provide email address or Id');
 
-    const query = userData.email
-      ? { Email: userData.email }
-      : { _id: new mongoose.Types.ObjectId(userData.Id) };
-
-    const userResult = await ngoModel.find(query);
-    // Return empty array if no user found (this is normal for signup checks)
-    return userResult || [];
+    if (userData.email) {
+      const user = await seireiteiVault.getByIndex('Users', 'Email', userData.email);
+      return user ? [user] : [];
+    } else {
+      const user = await seireiteiVault.get('Users', userData.Id!);
+      return user ? [user] : [];
+    }
   } catch (error) {
     throw error;
   }
@@ -29,70 +30,81 @@ const saveDataAndToken = async (userData: userSingupData) => {
   try {
     if (!userData) throw new Error('User data is required');
 
-    console.log('Saving NGO data:', {
-      email: userData.email,
-      ngoName: userData.ngoName,
-      regNumber: userData.regNumber,
-    });
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const userId = nanoid();
 
-    const Data = await ngoModel.create({
+    const data = {
+      _id: userId,
       Email: userData.email,
       NgoName: userData.ngoName,
       RegNumber: userData.regNumber,
       Description: userData.description,
-      PublicKey: userData.PublicKey, // Using PascalCase to match interface
-      PrivateKey: userData.PrivateKey, // Using PascalCase to match interface
-      walletAddr: userData.walletAddr || userData.PublicKey, // Include wallet address
+      PublicKey: userData.PublicKey,
+      PrivateKey: userData.PrivateKey,
+      walletAddr: userData.walletAddr || userData.PublicKey,
       PhoneNo: userData.phoneNo,
-      Password: userData.password,
-    });
+      Password: hashedPassword,
+    };
 
-    if (!Data) throw new Error('something went wrong while saving data');
+    await seireiteiVault.putWithIndex('Users', userId, data, 'Email', userData.email);
 
-    console.log('NGO data saved successfully:', Data._id);
+    const accessToken = jwt.sign(
+      { id: userId, email: data.Email, NgoName: data.NgoName, walletAddr: data.PublicKey },
+      process.env.ATS as string,
+      { expiresIn: (process.env.ATE as any) || '15m' } as jwt.SignOptions
+    );
 
-    const { accessToken, refreshToken } = await Data.generateTokens();
+    const refreshToken = jwt.sign(
+      { id: userId, walletAddr: data.PublicKey },
+      process.env.RTS as string,
+      { expiresIn: (process.env.RTE as any) || '7d' } as jwt.SignOptions
+    );
+
     return {
       success: true,
       accessToken,
       refreshToken,
       userData: {
-        Id: Data._id,
-        Email: Data.Email,
-        NgoName: Data.NgoName,
-        PublicKey: Data.PublicKey,
+        Id: userId,
+        Email: data.Email,
+        NgoName: data.NgoName,
+        PublicKey: data.PublicKey,
       },
     };
   } catch (error: any) {
     console.error('Error in saveDataAndToken:', error.message);
-    throw error; // Throw error instead of returning it
+    throw error;
   }
 };
 
-//The way i am writing code is to save time , but never do such thing
-//never write code this way!!
 const findUserWithTokenAndPassCheck = async (userData: userLoginData) => {
   try {
     if (!userData || !userData.email || !userData.password) {
       throw new Error('Email and password are required');
     }
 
-    // Find user by email
-    const user = await ngoModel.findOne({ Email: userData.email });
+    const user = await seireiteiVault.getByIndex('Users', 'Email', userData.email);
     if (!user) {
       throw new Error('User not found with this email');
     }
 
-    // Verify password
-    const isValidPassword = await user.isPasswordCorrect(userData.password);
+    const isValidPassword = await bcrypt.compare(userData.password, user.Password);
     if (!isValidPassword) {
       throw new Error('Invalid password');
     }
 
-    // Generate tokens with wallet address
-    const { accessToken, refreshToken } = await user.generateTokens();
+    const accessToken = jwt.sign(
+      { id: user._id, email: user.Email, NgoName: user.NgoName, walletAddr: user.PublicKey },
+      process.env.ATS as string,
+      { expiresIn: (process.env.ATE as any) || '15m' } as jwt.SignOptions
+    );
 
-    // Return user data with tokens
+    const refreshToken = jwt.sign(
+      { id: user._id, walletAddr: user.PublicKey },
+      process.env.RTS as string,
+      { expiresIn: (process.env.RTE as any) || '7d' } as jwt.SignOptions
+    );
+
     return {
       accessToken,
       refreshToken,
@@ -100,8 +112,8 @@ const findUserWithTokenAndPassCheck = async (userData: userLoginData) => {
         Id: user._id,
         Email: user.Email,
         NgoName: user.NgoName,
-        walletAddr: user.PublicKey, // Include wallet address
-        PublicKey: user.PublicKey, // For backward compatibility
+        walletAddr: user.PublicKey,
+        PublicKey: user.PublicKey,
       },
     };
   } catch (error) {
@@ -109,54 +121,17 @@ const findUserWithTokenAndPassCheck = async (userData: userLoginData) => {
   }
 };
 
-/**
- * Retrieves the private key of the NGO associated with a specific post
- * @param postId - The ID of the post to find the associated NGO
- * @returns The private key of the associated NGO
- * @throws Error if post not found, no associated NGO, or no private key available
- */
 const getPrivateKey = async (postId: string): Promise<string> => {
   if (!postId) throw new Error('Post ID is required');
 
-  try {
-    const result = await postModel.aggregate([
-      // Match the post by ID
-      { $match: { _id: new mongoose.Types.ObjectId(postId) } },
+  // In decentralized vault, we retrieve post and then lookup NGO (User)
+  const post = await seireiteiVault.get('Posts', postId);
+  if (!post || !post.NgoRef) throw new Error('Post not found');
 
-      // Lookup the NGO that owns this post
-      {
-        $lookup: {
-          from: 'ngomodels', // Collection name in MongoDB (usually lowercase plural)
-          localField: 'NgoRef', // Field in posts collection
-          foreignField: '_id', // Field in ngos collection
-          as: 'ngo',
-        },
-      },
+  const user = await seireiteiVault.get('Users', post.NgoRef);
+  if (!user || !user.PrivateKey) throw new Error('NGO not found');
 
-      // Unwind the ngo array (since lookup returns an array)
-      { $unwind: '$ngo' },
-
-      // Project only the private key
-      {
-        $project: {
-          _id: 0,
-          privateKey: '$ngo.PrivateKey',
-        },
-      },
-    ]);
-
-    if (!result.length) {
-      throw new Error('Post not found or no associated NGO');
-    }
-
-    if (!result[0].privateKey) {
-      throw new Error('No private key found for the associated NGO');
-    }
-
-    return result[0].privateKey;
-  } catch (error) {
-    console.error('Error in getPrivateKey:', error);
-    throw new Error('Failed to retrieve private key');
-  }
+  return user.PrivateKey;
 };
+
 export { findUser, saveDataAndToken, findUserWithTokenAndPassCheck, getPrivateKey };
