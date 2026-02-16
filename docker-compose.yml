@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: server
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - SOROBAN_RPC_URL=${SOROBAN_RPC_URL:-https://soroban-testnet.stellar.org}
+      - STACK_ADMIN_SECRET=${STACK_ADMIN_SECRET}
+      - VAULT_CONTRACT_ID=${VAULT_CONTRACT_ID}
+      - ESCROW_CONTRACT_ID=${ESCROW_CONTRACT_ID}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+      args:
+        - NEXT_PUBLIC_API_URL=http://server:8000/api
+        - NEXT_PUBLIC_STELLAR_NETWORK=TESTNET
+    ports:
+      - "3000:3000"
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
