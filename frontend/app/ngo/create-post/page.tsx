@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useDispatch, useSelector } from "react-redux"
 import type { RootState, AppDispatch } from "@/lib/redux/store"
 import { createStellarAccount } from "@/lib/stellar-utils"
-import { apiService } from "@/lib/api-service"
+import { uploadToIPFS, createPost } from "@/lib/api-service"
 import { Loader2, CheckCircle2, ArrowLeft, Upload, AlertCircle } from "lucide-react"
 
 export default function CreatePostPage() {
@@ -87,7 +87,7 @@ export default function CreatePostPage() {
       // Upload image to IPFS if provided
       let imageCid = ""
       if (formData.image) {
-        const uploadResponse = await apiService.uploadToIPFS(formData.image)
+        const uploadResponse = await uploadToIPFS(formData.image)
         if (uploadResponse.success) {
           imageCid = uploadResponse.data.cid
         }
@@ -106,8 +106,8 @@ export default function CreatePostPage() {
       }
 
       // Submit to API
-      const response = await apiService.createPost(postData)
-      
+      const response = await createPost(postData)
+
       if (response.success) {
         setStep("success")
       } else {
@@ -272,8 +272,8 @@ export default function CreatePostPage() {
                 </div>
 
                 {/* Submit Button */}
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full bg-primary hover:bg-primary/90"
                   disabled={!walletAddress}
                 >
