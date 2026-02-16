@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import AsyncHandler from '../util/asyncHandler.util.js';
 import { ApiResponse } from '../util/apiResponse.util.js';
 import { getDonationsByDonor } from '../dbQueries/donation.Queries.js';
-import { postModel } from '../model/post.model.js';
+import { getPosts } from '../dbQueries/post.Queries.js';
 import { ApiError } from '../util/apiError.util.js';
 
 const getUserProfile = AsyncHandler(async (req: Request, res: Response) => {
@@ -17,14 +17,13 @@ const getUserProfile = AsyncHandler(async (req: Request, res: Response) => {
   const totalReiatsu = donations.reduce((acc: number, curr: any) => acc + curr.Amount, 0);
 
   // 2. Get mission proofs (Missions Completed)
-  // We search for missions where this user submitted an approved proof
-  const completedMissions = await postModel.find({
-    Proofs: {
-      $elemMatch: {
-        Submitter: walletAddr,
-        Status: 'Approved',
-      },
-    },
+  // We search Vault posts for proofs submitted by this wallet
+  const allPosts = await getPosts();
+  const completedMissions = allPosts.filter((post: any) => {
+    if (!post.Proofs || !Array.isArray(post.Proofs)) return false;
+    return post.Proofs.some(
+      (proof: any) => proof.Submitter === walletAddr && proof.Status === 'Approved'
+    );
   });
 
   // 3. Determine Rank
@@ -38,7 +37,7 @@ const getUserProfile = AsyncHandler(async (req: Request, res: Response) => {
     rank,
     totalReiatsu,
     missionsCompletedCount: completedMissions.length,
-    completedMissions: completedMissions.map((m) => ({
+    completedMissions: completedMissions.map((m: any) => ({
       id: m._id,
       title: m.Title,
       dangerLevel: m.DangerLevel,
