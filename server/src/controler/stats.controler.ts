@@ -3,35 +3,32 @@ import AsyncHandler from '../util/asyncHandler.util.js';
 import { ApiError } from '../util/apiError.util.js';
 import { ApiResponse } from '../util/apiResponse.util.js';
 import { getAllDonation } from '../dbQueries/donation.Queries.js';
-import { ngoModel } from '../model/user(Ngo).model.js';
-import { postModel, IPost } from '../model/post.model.js';
+import { getAllNGOs } from '../dbQueries/ngo.Queries.js';
+import { getPosts } from '../dbQueries/post.Queries.js';
 import { getXLMtoINRRate } from '../util/exchangeRate.util.js';
 
 const getStats = AsyncHandler(async (req: Request, res: Response) => {
   try {
-    // Get all donations
     const donations = await getAllDonation();
     if (!donations) throw new ApiError(404, 'no donations found');
 
-    // Get live XLM to INR exchange rate
     const XLM_TO_INR_RATE = await getXLMtoINRRate();
 
-    // Calculate total raised (donations are in XLM, convert to INR)
     const totalRaisedXLM = donations.reduce((sum, donation) => {
       return sum + (donation.Amount || 0);
     }, 0);
     const totalRaisedINR = Math.round(totalRaisedXLM * XLM_TO_INR_RATE);
 
-    // Count unique donors (unique transaction IDs)
     const uniqueDonors = new Set(donations.map((donation) => donation.currentTxn)).size;
 
-    // Count verified NGOs
-    const verifiedNgos = await ngoModel.countDocuments();
+    // Use Vault query instead of Mongoose model
+    const allNGOs = await getAllNGOs();
+    const verifiedNgos = allNGOs ? allNGOs.length : 0;
 
     const stats = {
-      totalRaised: totalRaisedINR, // Total amount in INR (converted from XLM)
-      activeDonors: uniqueDonors, // Unique donors count
-      verifiedNGOs: verifiedNgos, // Total NGOs count
+      totalRaised: totalRaisedINR,
+      activeDonors: uniqueDonors,
+      verifiedNGOs: verifiedNgos,
     };
 
     return res.status(200).json(new ApiResponse(200, stats, 'stats retrieved successfully'));
@@ -43,43 +40,41 @@ const getStats = AsyncHandler(async (req: Request, res: Response) => {
 
 const getLeaderboard = AsyncHandler(async (req: Request, res: Response) => {
   try {
-    const ngos = await ngoModel.find();
+    const ngos = await getAllNGOs();
+    const allPosts = await getPosts();
     const XLM_TO_INR_RATE = await getXLMtoINRRate();
 
-    const leaderboard = await Promise.all(
-      ngos.map(async (ngo) => {
-        // Count completed missions for this Division (NGO)
-        const missions = await postModel.find({ NgoRef: ngo._id });
-        const completedCount = missions.filter((m: IPost) => m.Status === 'Completed').length;
+    const leaderboard = ngos.map((ngo: any) => {
+      // Filter posts that belong to this NGO
+      const missions = allPosts.filter(
+        (p: any) => p.NgoRef === ngo.id || p.NgoRef === ngo._id
+      );
+      const completedCount = missions.filter((m: any) => m.Status === 'Completed').length;
 
-        // Sum total funds raised for this Division
-        const totalXLM = missions.reduce(
-          (sum: number, m: IPost) => sum + (m.CollectedAmount || 0),
-          0
-        );
-        const totalINR = Math.round(totalXLM * XLM_TO_INR_RATE);
+      const totalXLM = missions.reduce(
+        (sum: number, m: any) => sum + (m.CollectedAmount || 0),
+        0
+      );
+      const totalINR = Math.round(totalXLM * XLM_TO_INR_RATE);
 
-        return {
-          divisionId: ngo._id,
-          name: ngo.NgoName,
-          captain: ngo.PublicKey.substring(0, 6) + '...', // Placeholder for Captain name
-          missionsCompleted: completedCount,
-          totalReiatsuInfused: totalINR,
-          rank: 0, // Will be set after sorting
-        };
-      })
-    );
+      return {
+        divisionId: ngo.id,
+        name: ngo.name || ngo.NgoName,
+        captain: (ngo.walletAddress || ngo.PublicKey || '').substring(0, 6) + '...',
+        missionsCompleted: completedCount,
+        totalReiatsuInfused: totalINR,
+        rank: 0,
+      };
+    });
 
-    // Sort by missions completed, then total raised
-    leaderboard.sort((a, b) => {
+    leaderboard.sort((a: any, b: any) => {
       if (b.missionsCompleted !== a.missionsCompleted) {
         return b.missionsCompleted - a.missionsCompleted;
       }
       return b.totalReiatsuInfused - a.totalReiatsuInfused;
     });
 
-    // Assign rank
-    leaderboard.forEach((item, index) => {
+    leaderboard.forEach((item: any, index: number) => {
       item.rank = index + 1;
     });
 
@@ -99,7 +94,6 @@ const getDonorStats = AsyncHandler(async (req: Request, res: Response) => {
 
   try {
     const donations = await getAllDonation();
-    // Simulate filtering by donor wallet part
     const donorDonations = donations.filter(
       (d) => d.currentTxn && walletAddr && d.currentTxn.includes(walletAddr.substring(0, 5))
     );
