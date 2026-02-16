@@ -38,8 +38,8 @@ const saveDataAndToken = async (userData) => {
             Password: hashedPassword,
         };
         await seireiteiVault.putWithIndex('Users', userId, data, 'Email', userData.email);
-        const accessToken = jwt.sign({ id: userId, email: data.Email, NgoName: data.NgoName, walletAddr: data.PublicKey }, process.env.ATS || 'fallback_secret', { expiresIn: process.env.ATE || '15m' });
-        const refreshToken = jwt.sign({ id: userId, walletAddr: data.PublicKey }, process.env.RTS || 'fallback_secret', { expiresIn: process.env.RTE || '7d' });
+        const accessToken = jwt.sign({ id: userId, email: data.Email, NgoName: data.NgoName, walletAddr: data.PublicKey }, process.env.ATS, { expiresIn: process.env.ATE || '15m' });
+        const refreshToken = jwt.sign({ id: userId, walletAddr: data.PublicKey }, process.env.RTS, { expiresIn: process.env.RTE || '7d' });
         return {
             success: true,
             accessToken,
@@ -70,8 +70,8 @@ const findUserWithTokenAndPassCheck = async (userData) => {
         if (!isValidPassword) {
             throw new Error('Invalid password');
         }
-        const accessToken = jwt.sign({ id: user._id, email: user.Email, NgoName: user.NgoName, walletAddr: user.PublicKey }, process.env.ATS || 'fallback_secret', { expiresIn: process.env.ATE || '15m' });
-        const refreshToken = jwt.sign({ id: user._id, walletAddr: user.PublicKey }, process.env.RTS || 'fallback_secret', { expiresIn: process.env.RTE || '7d' });
+        const accessToken = jwt.sign({ id: user._id, email: user.Email, NgoName: user.NgoName, walletAddr: user.PublicKey }, process.env.ATS, { expiresIn: process.env.ATE || '15m' });
+        const refreshToken = jwt.sign({ id: user._id, walletAddr: user.PublicKey }, process.env.RTS, { expiresIn: process.env.RTE || '7d' });
         return {
             accessToken,
             refreshToken,

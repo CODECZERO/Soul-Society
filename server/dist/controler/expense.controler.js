@@ -13,10 +13,10 @@ const getPreviousTransaction = AsyncHandler(async (req, res) => {
 });
 // Create new transaction record
 const createTransactionRecord = AsyncHandler(async (req, res) => {
-    const { txnData, postId } = req.body;
+    const { txnData, postId, amount } = req.body;
     if (!txnData || !postId)
         throw new ApiError(400, 'Transaction data and post ID are required');
-    const transaction = await createTransaction(txnData, postId);
+    const transaction = await createTransaction(txnData, postId, amount || 0);
     if (!transaction)
         throw new ApiError(500, 'Failed to create transaction record');
     return res.status(200).json(new ApiResponse(200, transaction, 'Transaction record created'));

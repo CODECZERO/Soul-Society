@@ -31,7 +31,7 @@ router.use('/community', communityRoutes);
 router.get('/health', (req, res) => {
     res.status(200).json({
         success: true,
-        message: 'Soul-Society API is running',
+        message: 'AidBridge API is running',
         timestamp: new Date().toISOString(),
     });
 });

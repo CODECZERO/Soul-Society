@@ -1,7 +1,6 @@
 import AsyncHandler from '../util/asyncHandler.util.js';
 import { ApiError } from '../util/apiError.util.js';
 import { ApiResponse } from '../util/apiResponse.util.js';
-import { Types } from 'mongoose';
 import { getPosts, savePostData } from '../dbQueries/post.Queries.js';
 import { getDonationRelatedToPost } from '../dbQueries/donation.Queries.js';
 import { getXLMtoINRRate } from '../util/exchangeRate.util.js';
@@ -24,12 +23,11 @@ const getAllPost = AsyncHandler(async (req, res) => {
                     return sum + (donation.Amount || 0);
                 }, 0);
                 const collectedINR = collectedXLM * XLM_TO_INR_RATE;
-                // Convert to plain object if it's a Mongoose document
-                const postObj = post.toObject ? post.toObject() : post;
+                // Plain object from Vault (no .toObject() needed)
+                const postObj = { ...post };
                 // Format the image URL if ImgCid exists
                 if (post.ImgCid) {
                     try {
-                        // Replace ImgCid with the full URL
                         postObj.ImgCid = (await ImgFormater(post.ImgCid)) || '';
                     }
                     catch (error) {
@@ -42,15 +40,13 @@ const getAllPost = AsyncHandler(async (req, res) => {
                 }
                 return {
                     ...postObj,
-                    CollectedAmount: Math.round(collectedINR), // Amount in INR (rounded)
+                    CollectedAmount: Math.round(collectedINR),
                 };
             }
             catch (error) {
                 console.error(`Error processing post ${post._id}:`, error);
-                // Return post without CollectedAmount if error
-                const postObj = post.toObject ? post.toObject() : post;
                 return {
-                    ...postObj,
+                    ...post,
                     CollectedAmount: 0,
                     ImgCid: post.ImgCid ? await ImgFormater(post.ImgCid).catch(() => '') : '',
                 };
@@ -64,38 +60,31 @@ const getAllPost = AsyncHandler(async (req, res) => {
     }
 });
 const createPost = AsyncHandler(async (req, res) => {
-    // Get the post data from the request body
     const postData = req.body;
-    // Check if the user is authenticated and has a wallet address
     if (!req.user || !req.user.walletAddr) {
         throw new ApiError(401, 'User wallet address not found. Please connect your wallet.');
     }
-    // Set the wallet address from the authenticated user
     postData.WalletAddr = req.user.walletAddr;
-    // Set the NGO reference from the authenticated user
+    // Set NgoRef as a plain string ID (no more ObjectId)
     if (req.NgoId) {
-        postData.NgoRef = new Types.ObjectId(req.NgoId);
+        postData.NgoRef = req.NgoId;
     }
     else {
         throw new ApiError(401, 'NGO authentication required');
     }
-    // Validate required fields
     if (!postData.Title || !postData.Description || !postData.NeedAmount) {
         throw new ApiError(400, 'Title, description, and amount are required');
     }
-    // Ensure defaults if not provided
     postData.Status = postData.Status || 'Active';
     postData.DangerLevel = postData.DangerLevel || 'Low';
-    // Save the post data
     const saveData = await savePostData(postData);
     if (!saveData) {
         throw new ApiError(500, 'Failed to save post data');
     }
-    // Expansion 3.1: Register on Mission Registry (On-Chain)
+    // Register on Mission Registry (On-Chain)
     try {
         const dangerLevelMap = { Low: 1, Medium: 2, High: 3, Extreme: 4 };
         const numericDanger = dangerLevelMap[postData.DangerLevel || 'Low'] || 1;
-        // Use user's private key if available, otherwise fallback
         const privateKey = req.user.privateKey || process.env.DEFAULT_CAPTAIN_S_KEY;
         if (privateKey) {
             await registerMission(privateKey, saveData._id.toString(), postData.Title, numericDanger);
@@ -104,7 +93,6 @@ const createPost = AsyncHandler(async (req, res) => {
     }
     catch (chainError) {
         console.warn('On-chain registration failed:', chainError);
-        // We don't throw here to ensure DB consistency is prioritized for the hackathon
     }
     return res.status(200).json(new ApiResponse(200, saveData, 'Post created successfully'));
 });

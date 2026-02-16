@@ -5,6 +5,7 @@ export interface GetPrevTxnRequest {
 export interface CreateTxnRequest {
     txnData: unknown;
     postId: string;
+    amount: number;
 }
 declare const getPreviousTransaction: (req: Request, res: Response, next: import("express").NextFunction) => void;
 declare const createTransactionRecord: (req: Request, res: Response, next: import("express").NextFunction) => void;

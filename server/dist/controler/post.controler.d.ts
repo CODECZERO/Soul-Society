@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from 'express';
-import { Types } from 'mongoose';
 export interface PostData {
     Title: string;
     Type: string;
@@ -8,7 +7,7 @@ export interface PostData {
     ImgCid: string;
     NeedAmount: string;
     WalletAddr: string;
-    NgoRef?: Types.ObjectId;
+    NgoRef?: string;
     Status?: 'Active' | 'Completed' | 'Failed';
     DangerLevel?: 'Low' | 'Medium' | 'High' | 'Extreme';
 }

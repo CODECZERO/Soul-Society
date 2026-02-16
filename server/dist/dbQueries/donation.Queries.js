@@ -1,3 +1,4 @@
+import { joinCommunity, syncCommunityFromNGO } from './community.Queries.js';
 import { seireiteiVault } from '../services/stellar/seireiteiVault.service.js';
 import { nanoid } from 'nanoid';
 const getDonation = async (transactionId) => {
@@ -46,6 +47,17 @@ const createDonation = async (donationData) => {
         await seireiteiVault.put('Donations_Txn_Index', donationData.TransactionId, donationId);
         await seireiteiVault.put('Donations_Donor_Index', donationData.Donor, donationId);
         await seireiteiVault.put('Donations_PostID_Index', donationData.postID, donationId);
+        // AUTO-JOIN COMMUNITY LOGIC
+        // 1. Get the Task (Post) to find the NGO
+        const post = await seireiteiVault.get('Posts', donationData.postID);
+        if (post && (post.ngo || post.NgoRef)) {
+            const ngoId = post.ngo || post.NgoRef;
+            // 2. Ensure Community exists (lazy sync)
+            await syncCommunityFromNGO(ngoId, post.Author || "NGO", "Community", "");
+            // 3. Join
+            await joinCommunity(ngoId, donationData.Donor);
+            console.log(`[VAULT] Auto-joined wallet ${donationData.Donor} to Community ${ngoId}`);
+        }
         console.log(`[VAULT] Donation recorded on-chain: ${donationId}`);
         return data;
     }

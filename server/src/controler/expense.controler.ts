@@ -11,6 +11,7 @@ export interface GetPrevTxnRequest {
 export interface CreateTxnRequest {
   txnData: unknown;
   postId: string;
+  amount: number;
 }
 
 // Get previous transaction for a post
@@ -25,10 +26,10 @@ const getPreviousTransaction = AsyncHandler(async (req: Request, res: Response) 
 
 // Create new transaction record
 const createTransactionRecord = AsyncHandler(async (req: Request, res: Response) => {
-  const { txnData, postId } = req.body as CreateTxnRequest;
+  const { txnData, postId, amount } = req.body as CreateTxnRequest;
   if (!txnData || !postId) throw new ApiError(400, 'Transaction data and post ID are required');
 
-  const transaction = await createTransaction(txnData, postId);
+  const transaction = await createTransaction(txnData, postId, amount || 0);
   if (!transaction) throw new ApiError(500, 'Failed to create transaction record');
 
   return res.status(200).json(new ApiResponse(200, transaction, 'Transaction record created'));

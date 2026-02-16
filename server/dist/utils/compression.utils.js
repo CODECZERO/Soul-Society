@@ -10,22 +10,33 @@ async function getZstd() {
 }
 /**
  * Compresses an object into a Zstandard buffer.
- * Zstd offers much faster compression/decompression speeds than LZMA.
+ * Returns buffer + size metrics for logging.
  */
 export async function compressData(data) {
     const zstd = await getZstd();
     const jsonStr = JSON.stringify(data);
     const input = Buffer.from(jsonStr);
     const compressed = zstd.compress(input);
-    return Buffer.from(compressed);
+    const compressedBuf = Buffer.from(compressed);
+    return {
+        buffer: compressedBuf,
+        originalSize: input.length,
+        compressedSize: compressedBuf.length,
+    };
 }
 /**
  * Decompresses a Zstandard buffer back into an object.
+ * Returns parsed data + size metrics for logging.
  */
 export async function decompressData(compressed) {
     const zstd = await getZstd();
     const decompressed = zstd.decompress(compressed);
-    const jsonStr = Buffer.from(decompressed).toString();
-    return JSON.parse(jsonStr);
+    const decompressedBuf = Buffer.from(decompressed);
+    const jsonStr = decompressedBuf.toString();
+    return {
+        data: JSON.parse(jsonStr),
+        compressedSize: compressed.length,
+        decompressedSize: decompressedBuf.length,
+    };
 }
 //# sourceMappingURL=compression.utils.js.map

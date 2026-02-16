@@ -1,7 +1,7 @@
 import AsyncHandler from '../util/asyncHandler.util.js';
 import { ApiResponse } from '../util/apiResponse.util.js';
 import { getDonationsByDonor } from '../dbQueries/donation.Queries.js';
-import { postModel } from '../model/post.model.js';
+import { getPosts } from '../dbQueries/post.Queries.js';
 import { ApiError } from '../util/apiError.util.js';
 const getUserProfile = AsyncHandler(async (req, res) => {
     const { walletAddr } = req.params;
@@ -12,14 +12,12 @@ const getUserProfile = AsyncHandler(async (req, res) => {
     const donations = await getDonationsByDonor(walletAddr);
     const totalReiatsu = donations.reduce((acc, curr) => acc + curr.Amount, 0);
     // 2. Get mission proofs (Missions Completed)
-    // We search for missions where this user submitted an approved proof
-    const completedMissions = await postModel.find({
-        Proofs: {
-            $elemMatch: {
-                Submitter: walletAddr,
-                Status: 'Approved',
-            },
-        },
+    // We search Vault posts for proofs submitted by this wallet
+    const allPosts = await getPosts();
+    const completedMissions = allPosts.filter((post) => {
+        if (!post.Proofs || !Array.isArray(post.Proofs))
+            return false;
+        return post.Proofs.some((proof) => proof.Submitter === walletAddr && proof.Status === 'Approved');
     });
     // 3. Determine Rank
     let rank = 'Substitute Soul Reaper';

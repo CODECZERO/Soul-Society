@@ -9,16 +9,13 @@ export interface userSingupData {
     PublicKey?: string;
     PrivateKey?: string;
     walletAddr?: string;
-    NgoName?: string;
-    RegNumber?: string;
-    Description?: string;
-    Email?: string;
-    PhoneNo?: string;
-    Password?: string;
+    image?: string;
+    website?: string;
 }
 export interface userLoginData {
-    email: string;
-    password: string;
+    email?: string;
+    password?: string;
+    walletAddress?: string;
 }
 declare const singup: (req: Request, res: Response, next: import("express").NextFunction) => void;
 declare const login: (req: Request, res: Response, next: import("express").NextFunction) => void;

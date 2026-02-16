@@ -55,7 +55,92 @@ const getTaskVotes = async (taskId) => {
         throw error;
     }
 };
-// ─── Community Proof Queries ───────────────────────────────────────
+// ─── Community Hub Queries ────────────────────────────────────────
+/**
+ * Sync/Create a Community record from NGO data.
+ * Called when an NGO is created or updated (manual sync for now) or lazily.
+ */
+const syncCommunityFromNGO = async (ngoId, name, description, image) => {
+    try {
+        let community = await seireiteiVault.get('Communities', ngoId);
+        if (!community) {
+            community = {
+                id: ngoId,
+                name,
+                description,
+                image,
+                memberCount: 0,
+                members: [],
+                totalFundsRaised: 0,
+                createdAt: new Date().toISOString(),
+                taskCount: 0
+            };
+        }
+        else {
+            // Update metadata
+            community.name = name;
+            community.description = description;
+            community.image = image;
+        }
+        await seireiteiVault.put('Communities', ngoId, community);
+        return community;
+    }
+    catch (error) {
+        console.error('Error syncing community:', error);
+    }
+};
+/**
+ * Join a Community (Add member).
+ */
+const joinCommunity = async (communityId, walletAddr) => {
+    try {
+        const community = await seireiteiVault.get('Communities', communityId);
+        if (!community)
+            return; // Community doesn't exist yet
+        if (!community.members)
+            community.members = [];
+        if (!community.members.includes(walletAddr)) {
+            community.members.push(walletAddr);
+            community.memberCount = community.members.length;
+            await seireiteiVault.put('Communities', communityId, community);
+            console.log(`[VAULT] Wallet ${walletAddr} joined Community ${communityId}`);
+        }
+    }
+    catch (error) {
+        console.error('Error joining community:', error);
+    }
+};
+/**
+ * Get all Communities.
+ */
+const getAllCommunities = async () => {
+    try {
+        return await seireiteiVault.getAll('Communities');
+    }
+    catch (error) {
+        console.error('Error fetching communities:', error);
+        throw error;
+    }
+};
+/**
+ * Get Community Details (with Active Tasks).
+ */
+const getCommunityDetails = async (communityId) => {
+    try {
+        const community = await seireiteiVault.get('Communities', communityId);
+        if (!community)
+            return null;
+        // Fetch Tasks for this Community (NGO)
+        // We can query Posts by 'ngo' or 'NgoRef'
+        const allPosts = await seireiteiVault.getAll('Posts');
+        const tasks = allPosts.filter((p) => p.ngo === communityId || p.NgoRef === communityId);
+        return { ...community, tasks };
+    }
+    catch (error) {
+        console.error('Error fetching community details:', error);
+        throw error;
+    }
+};
 // ─── Community Proof Queries ───────────────────────────────────────
 /**
  * Submit proof of work done by an NGO.
@@ -235,5 +320,7 @@ const getCommunityLeaderboard = async () => {
         throw error;
     }
 };
-export { submitCommunityVote, getTaskVotes, submitWorkProof, getTaskProofs, voteOnProof, findProofByHash, getVoterStats, updateVoterAccuracy, getCommunityLeaderboard, };
+export { submitCommunityVote, getTaskVotes, submitWorkProof, getTaskProofs, voteOnProof, findProofByHash, getVoterStats, updateVoterAccuracy, getCommunityLeaderboard, 
+// Hub Exports
+syncCommunityFromNGO, joinCommunity, getAllCommunities, getCommunityDetails, };
 //# sourceMappingURL=community.Queries.js.map

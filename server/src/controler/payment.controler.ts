@@ -90,7 +90,7 @@ const walletPay = AsyncHandler(async (req: Request, res: Response) => {
       metadata: 'Payment for post: ' + senderWallet.PostId,
     });
 
-    const data = await createTransaction(UploadData, senderWallet.PostId);
+    const data = await createTransaction(UploadData, senderWallet.PostId, senderWallet.Amount);
 
     return res.status(200).json(new ApiResponse(200, data, 'saved and created'));
   } catch (error) {

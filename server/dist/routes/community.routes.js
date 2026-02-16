@@ -1,6 +1,9 @@
 import { Router } from 'express';
-import { voteOnTask, getVotesForTask, submitProof, getProofsByTask, voteOnProofCtrl, verifyProofByHash, getVoterAccuracy, getLeaderboard, getVoteXdr, getProofXdr, } from '../controler/community.controler.js';
+import { voteOnTask, getVotesForTask, submitProof, getProofsByTask, voteOnProofCtrl, verifyProofByHash, getVoterAccuracy, getLeaderboard, getVoteXdr, getProofXdr, getCommunitiesList, getCommunity, } from '../controler/community.controler.js';
 const router = Router();
+// Community Hub
+router.get('/all', getCommunitiesList);
+router.get('/:id', getCommunity); // Generic ID lookup for Community Details
 // Community voting on Tasks (Main)
 router.post('/vote', voteOnTask);
 router.post('/vote/xdr', getVoteXdr);

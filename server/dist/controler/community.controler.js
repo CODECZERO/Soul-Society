@@ -1,8 +1,24 @@
 import AsyncHandler from '../util/asyncHandler.util.js';
 import { ApiError } from '../util/apiError.util.js';
 import { ApiResponse } from '../util/apiResponse.util.js';
-import { submitCommunityVote, getTaskVotes, submitWorkProof, getTaskProofs, voteOnProof, findProofByHash, getVoterStats, getCommunityLeaderboard, } from '../dbQueries/community.Queries.js';
+import { submitCommunityVote, getTaskVotes, submitWorkProof, getTaskProofs, voteOnProof, findProofByHash, getVoterStats, getCommunityLeaderboard, 
+// Hub Exports
+getAllCommunities, getCommunityDetails, } from '../dbQueries/community.Queries.js';
 import { escrowService } from '../services/stellar/escrow.service.js';
+// ─── Community Hub ─────────────────────────────────────────────────
+const getCommunitiesList = AsyncHandler(async (req, res) => {
+    const list = await getAllCommunities();
+    return res.status(200).json(new ApiResponse(200, list, 'Communities retrieved'));
+});
+const getCommunity = AsyncHandler(async (req, res) => {
+    const { id } = req.params;
+    if (!id)
+        throw new ApiError(400, 'Community ID is required');
+    const details = await getCommunityDetails(id);
+    if (!details)
+        throw new ApiError(404, 'Community not found');
+    return res.status(200).json(new ApiResponse(200, details, 'Community details retrieved'));
+});
 // ─── Vote on Task Authenticity ─────────────────────────────────────
 const voteOnTask = AsyncHandler(async (req, res) => {
     const { taskId, voterWallet, isScam, reason } = req.body;
@@ -88,5 +104,5 @@ const getLeaderboard = AsyncHandler(async (req, res) => {
     const leaderboard = await getCommunityLeaderboard();
     return res.status(200).json(new ApiResponse(200, leaderboard, 'Leaderboard retrieved'));
 });
-export { voteOnTask, getVotesForTask, submitProof, getProofsByTask, voteOnProofCtrl, verifyProofByHash, getVoterAccuracy, getLeaderboard, getVoteXdr, getProofXdr, };
+export { voteOnTask, getVotesForTask, submitProof, getProofsByTask, voteOnProofCtrl, verifyProofByHash, getVoterAccuracy, getLeaderboard, getVoteXdr, getProofXdr, getCommunitiesList, getCommunity, };
 //# sourceMappingURL=community.controler.js.map

@@ -11,7 +11,7 @@ const getPrevTxn = async (PostId) => {
         return '';
     }
 };
-const createTransaction = async (txnData, postId) => {
+const createTransaction = async (txnData, postId, amount) => {
     try {
         if (!txnData)
             throw new Error('Invalid transaction data');
@@ -20,6 +20,7 @@ const createTransaction = async (txnData, postId) => {
             _id: expenseId,
             currentTxn: txnData,
             postIDs: postId,
+            Amount: amount, // Explicitly store amount
             createdAt: new Date().toISOString()
         };
         await seireiteiVault.put('Expenses', expenseId, data);
@@ -32,5 +33,14 @@ const createTransaction = async (txnData, postId) => {
         return error;
     }
 };
-export { getPrevTxn, createTransaction };
+const getAllExpenses = async () => {
+    try {
+        return await seireiteiVault.getAll('Expenses');
+    }
+    catch (error) {
+        console.error('Error fetching all expenses:', error);
+        throw error;
+    }
+};
+export { getPrevTxn, createTransaction, getAllExpenses };
 //# sourceMappingURL=expense.Queries.js.map

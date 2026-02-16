@@ -1,6 +1,7 @@
 export declare class SeireiteiVaultService {
     private server;
     private adminKeypair;
+    private isContractValid;
     /**
      * Stores any data object on-chain in a specific collection.
      */

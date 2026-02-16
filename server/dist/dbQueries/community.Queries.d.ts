@@ -10,6 +10,23 @@ declare const submitCommunityVote: (taskId: string, voterWallet: string, isScam:
  */
 declare const getTaskVotes: (taskId: string) => Promise<any>;
 /**
+ * Sync/Create a Community record from NGO data.
+ * Called when an NGO is created or updated (manual sync for now) or lazily.
+ */
+declare const syncCommunityFromNGO: (ngoId: string, name: string, description: string, image: string) => Promise<any>;
+/**
+ * Join a Community (Add member).
+ */
+declare const joinCommunity: (communityId: string, walletAddr: string) => Promise<void>;
+/**
+ * Get all Communities.
+ */
+declare const getAllCommunities: () => Promise<any[]>;
+/**
+ * Get Community Details (with Active Tasks).
+ */
+declare const getCommunityDetails: (communityId: string) => Promise<any>;
+/**
  * Submit proof of work done by an NGO.
  * Stored directly on the Post object in the Vault "chain".
  */
@@ -55,5 +72,5 @@ declare const updateVoterAccuracy: (walletAddr: string, wasCorrect: boolean, rew
  * Get community leaderboard (top voters by accuracy).
  */
 declare const getCommunityLeaderboard: () => Promise<any[]>;
-export { submitCommunityVote, getTaskVotes, submitWorkProof, getTaskProofs, voteOnProof, findProofByHash, getVoterStats, updateVoterAccuracy, getCommunityLeaderboard, };
+export { submitCommunityVote, getTaskVotes, submitWorkProof, getTaskProofs, voteOnProof, findProofByHash, getVoterStats, updateVoterAccuracy, getCommunityLeaderboard, syncCommunityFromNGO, joinCommunity, getAllCommunities, getCommunityDetails, };
 //# sourceMappingURL=community.Queries.d.ts.map
