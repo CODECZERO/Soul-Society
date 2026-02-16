@@ -6,11 +6,13 @@ import { TaskCard } from "@/components/task-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
-import { apiService, type Post } from "@/lib/api-service"
+import { getPosts, type Post } from "@/lib/api-service"
 import { mockTasks, categories } from "@/lib/mock-data"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/lib/redux/store"
 
 export default function ExplorePage() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const { searchQuery } = useSelector((state: RootState) => state.ui)
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [posts, setPosts] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -40,11 +42,9 @@ export default function ExplorePage() {
         }
       }
 
-      // If no cache or cache expired, fetch fresh data
-      const response = await apiService.getPosts()
+      const response = await getPosts()
       if (response && response.success && Array.isArray(response.data)) {
         setPosts(response.data)
-        // Cache the response
         if (typeof window !== 'undefined') {
           localStorage.setItem(cacheKey, JSON.stringify({
             data: response.data,
@@ -52,14 +52,12 @@ export default function ExplorePage() {
           }));
         }
       } else {
-        console.warn('Unexpected API response format:', response)
         throw new Error('Invalid response format')
       }
     } catch (err) {
       console.error("Error loading posts:", err)
-      setError("Failed to load posts. Showing cached or sample data.")
+      setError("Failed to load campaigns. Showing cached data.")
 
-      // Try to use cached data if available
       const cacheKey = 'cached_posts';
       const cachedData = typeof window !== 'undefined' ? localStorage.getItem(cacheKey) : null;
 
@@ -67,45 +65,12 @@ export default function ExplorePage() {
         const { data } = JSON.parse(cachedData);
         setPosts(data);
       } else {
-        // Fallback to mock data if no cache
-        setPosts(mockTasks.map(task => ({
-          _id: task.id.toString(),
-          Title: task.title,
-          Type: task.category,
-          Description: task.description,
-          Location: task.location,
-          ImgCid: task.image,
-          NeedAmount: task.goal.toString(),
-          CollectedAmount: task.raised,
-          WalletAddr: "GBUQWP3BOUZX34ULNQG23RQ6F4BVXEYMJUCHUZI7VCZE7FDCVXWH6HUP",
-          NgoRef: task.ngo,
-          id: task.id,
-          ngo: task.ngo,
-          goal: task.goal,
-          raised: task.raised,
-          image: task.image,
-          category: task.category
-        })))
+        setPosts([])
       }
     } finally {
       setIsLoading(false)
     }
   }
-
-  // Convert API posts to task format for TaskCard component
-  const convertPostToTask = (post: Post) => ({
-    id: post._id, // Use MongoDB _id directly (string), not parseInt
-    title: post.Title,
-    ngo: post.NgoRef,
-    description: post.Description,
-    goal: parseInt(post.NeedAmount),
-    raised: post.CollectedAmount || 0, // Use real collected amount from backend (in INR)
-    image: post.ImgCid && post.ImgCid.startsWith('/') ? post.ImgCid : `/placeholder.jpg`,
-    category: post.Type,
-    _id: post._id, // Keep original _id for backend calls
-  })
-
-  const allTasks = posts.map(convertPostToTask)
 
   const filteredTasks = posts
     .filter((task) => {
@@ -121,61 +86,54 @@ export default function ExplorePage() {
     )
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-zinc-950">
       <Header />
 
-      <div className="py-12 px-4">
+      <div className="py-10 px-4">
         <div className="mx-auto max-w-6xl">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-2 h-10 bg-orange-600" />
-            <h1 className="text-5xl font-black text-white italic uppercase tracking-tighter">
-              Mission Registry
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-1 h-8 bg-amber-500 rounded-full" />
+            <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+              Explore Campaigns
             </h1>
           </div>
 
-          {/* Search and Filter */}
-          <div className="mb-12 space-y-6">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-600 group-focus-within:text-orange-500 transition-colors" />
-              <Input
-                placeholder="TRACK HOLLOW SIGNATURES OR DIVISION ORDERS..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 bg-zinc-950 border-zinc-900 rounded-none text-white font-mono uppercase tracking-widest placeholder:text-zinc-700 focus-visible:ring-orange-600 focus-visible:border-orange-600 h-14"
-              />
-            </div>
-
-            <div className="flex gap-3 flex-wrap">
+          {/* Category Filter */}
+          <div className="mb-10">
+            <div className="flex gap-2 flex-wrap">
               {["All", ...categories].map((category) => (
                 <Button
                   key={category}
                   variant="outline"
                   onClick={() => setSelectedCategory(category)}
-                  className={`rounded-none font-black uppercase italic tracking-widest text-[10px] skew-x-[-12deg] transition-all ${selectedCategory === category
-                      ? "bg-orange-600 text-black border-orange-600"
-                      : "bg-black text-zinc-500 border-zinc-900 hover:border-orange-500 hover:text-white"
+                  className={`rounded-md font-medium text-xs transition-all ${selectedCategory === category
+                    ? "bg-amber-500 text-black border-amber-500"
+                    : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-amber-500/50 hover:text-white"
                     }`}
                 >
-                  <span className="skew-x-[12deg]">{category}</span>
+                  {category}
                 </Button>
               ))}
             </div>
           </div>
 
           {/* Loading State */}
-          {error ? (
-            <div className="text-center text-red-500 mb-8">
-              {error} - Showing sample data
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <div className="w-10 h-10 border-3 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+              <p className="text-zinc-500 text-sm">Loading campaigns...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center text-zinc-500 mb-8 border border-zinc-800 bg-zinc-900/30 p-4 rounded-md text-sm">
+              {error}
             </div>
           ) : null}
 
           {/* Tasks Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTasks.map((task) => {
-              // Ensure we're passing the correct task structure to TaskCard
               const taskForCard = {
                 ...task,
-                // Ensure all required fields have default values
                 Title: task.Title || '',
                 Description: task.Description || '',
                 NeedAmount: task.NeedAmount || '0',
@@ -185,7 +143,6 @@ export default function ExplorePage() {
                 Location: task.Location || 'Unknown',
                 WalletAddr: task.WalletAddr || '',
                 NgoRef: task.NgoRef || '',
-                // For backward compatibility with mock data
                 id: task._id,
                 title: task.Title || '',
                 description: task.Description || '',
@@ -202,7 +159,7 @@ export default function ExplorePage() {
 
           {filteredTasks.length === 0 && !isLoading && (
             <div className="text-center py-12">
-              <p className="text-muted-foreground text-lg">No tasks found matching your criteria</p>
+              <p className="text-zinc-500 text-sm">No campaigns found matching your criteria</p>
             </div>
           )}
         </div>
