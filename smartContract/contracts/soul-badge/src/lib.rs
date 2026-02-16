@@ -1,50 +1,252 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, contractevent, symbol_short, Env, Address, String, Vec, vec};
+use soroban_sdk::{
+    contract, contractimpl, contracttype, symbol_short,
+    Env, Address, String, Vec, vec,
+};
 
 mod test;
+
+// ═══════════════════════════════════════════════════════════════════
+//  SOUL BADGE v2 — TIERS, VERIFICATION, REVOCATION, LEADERBOARD
+// ═══════════════════════════════════════════════════════════════════
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BadgeTier {
+    Bronze,
+    Silver,
+    Gold,
+    Bankai,
+}
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Badge {
     pub mission_id: String,
     pub rank: String,
+    pub tier: BadgeTier,
     pub timestamp: u64,
+    pub revoked: bool,
 }
 
 #[contracttype]
 pub enum DataKey {
-    Badges(Address),
+    Badges(Address),          // Vec<Badge> per reaper
+    BadgeCount(Address),      // Total (non-revoked) badge count
+    TotalBadges,              // Global badge count
+    Admin,
+    AllReapers,               // Vec<Address> for leaderboard
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LeaderboardEntry {
+    pub reaper: Address,
+    pub badge_count: u32,
 }
 
 #[contract]
 pub struct SoulBadge;
 
+#[allow(deprecated)]
 #[contractimpl]
 impl SoulBadge {
-    /// Mint a new Soul Badge for a successful mission
+
+    // ── INITIALIZATION ───────────────────────────────────────────
+
+    pub fn initialize(env: Env, admin: Address) {
+        if env.storage().instance().has(&DataKey::Admin) {
+            panic!("Already initialized");
+        }
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().persistent().set(&DataKey::TotalBadges, &0u32);
+    }
+
+    // ── MINTING ──────────────────────────────────────────────────
+
+    /// Mint a badge. Tier is auto-calculated based on cumulative count.
     pub fn mint(env: Env, reaper: Address, mission_id: String, rank: String) {
-        // In a real scenario, this would require NGO/Admin auth
-        // reaper.require_auth(); 
-        
-        let mut badges: Vec<Badge> = env.storage().persistent().get(&DataKey::Badges(reaper.clone())).unwrap_or(vec![&env]);
-        
-        let new_badge = Badge {
+        let mut badges: Vec<Badge> = env.storage().persistent()
+            .get(&DataKey::Badges(reaper.clone()))
+            .unwrap_or(vec![&env]);
+
+        // Count non-revoked badges for tier calculation
+        let mut active_count: u32 = 0;
+        for i in 0..badges.len() {
+            if let Some(b) = badges.get(i) {
+                if !b.revoked { active_count += 1; }
+            }
+        }
+
+        // Tier based on cumulative badges
+        let tier = match active_count {
+            0..=4 => BadgeTier::Bronze,
+            5..=14 => BadgeTier::Silver,
+            15..=29 => BadgeTier::Gold,
+            _ => BadgeTier::Bankai,
+        };
+
+        let badge = Badge {
             mission_id,
             rank,
+            tier,
             timestamp: env.ledger().timestamp(),
+            revoked: false,
         };
-        
-        badges.push_back(new_badge);
+
+        badges.push_back(badge);
         env.storage().persistent().set(&DataKey::Badges(reaper.clone()), &badges);
-        
+
+        // Update counts
+        let new_count = active_count + 1;
+        env.storage().persistent().set(&DataKey::BadgeCount(reaper.clone()), &new_count);
+
+        let mut total: u32 = env.storage().persistent()
+            .get(&DataKey::TotalBadges).unwrap_or(0);
+        total += 1;
+        env.storage().persistent().set(&DataKey::TotalBadges, &total);
+
+        // Track for leaderboard
+        let mut all: Vec<Address> = env.storage().persistent()
+            .get(&DataKey::AllReapers).unwrap_or(vec![&env]);
+        let mut found = false;
+        for i in 0..all.len() {
+            if all.get(i).unwrap() == reaper {
+                found = true;
+                break;
+            }
+        }
+        if !found {
+            all.push_back(reaper.clone());
+            env.storage().persistent().set(&DataKey::AllReapers, &all);
+        }
+
         env.events().publish(
             (symbol_short!("badge"), symbol_short!("minted")),
-            (reaper, env.ledger().timestamp())
+            (reaper, env.ledger().timestamp()),
         );
     }
 
-    /// Get all badges for a Soul Reaper
+    // ── REVOCATION ───────────────────────────────────────────────
+
+    /// Admin-only: Revoke a badge by mission_id.
+    pub fn revoke(env: Env, admin: Address, reaper: Address, mission_id: String) {
+        admin.require_auth();
+        Self::require_admin(&env, &admin);
+
+        let mut badges: Vec<Badge> = env.storage().persistent()
+            .get(&DataKey::Badges(reaper.clone()))
+            .unwrap_or(vec![&env]);
+
+        let mut revoked_any = false;
+        for i in 0..badges.len() {
+            if let Some(mut b) = badges.get(i) {
+                if b.mission_id == mission_id && !b.revoked {
+                    b.revoked = true;
+                    badges.set(i, b);
+                    revoked_any = true;
+                    break;
+                }
+            }
+        }
+
+        if !revoked_any { panic!("Badge not found or already revoked"); }
+
+        env.storage().persistent().set(&DataKey::Badges(reaper.clone()), &badges);
+
+        // Decrement count
+        let mut count: u32 = env.storage().persistent()
+            .get(&DataKey::BadgeCount(reaper.clone())).unwrap_or(0);
+        if count > 0 { count -= 1; }
+        env.storage().persistent().set(&DataKey::BadgeCount(reaper.clone()), &count);
+
+        env.events().publish(
+            (symbol_short!("badge"), symbol_short!("revoked")),
+            (reaper, mission_id),
+        );
+    }
+
+    // ── QUERIES ──────────────────────────────────────────────────
+
     pub fn get_badges(env: Env, reaper: Address) -> Vec<Badge> {
-        env.storage().persistent().get(&DataKey::Badges(reaper)).unwrap_or(vec![&env])
+        env.storage().persistent()
+            .get(&DataKey::Badges(reaper))
+            .unwrap_or(vec![&env])
+    }
+
+    /// Verify that a specific badge exists (non-revoked) for a reaper.
+    pub fn verify_badge(env: Env, reaper: Address, mission_id: String) -> bool {
+        let badges: Vec<Badge> = env.storage().persistent()
+            .get(&DataKey::Badges(reaper))
+            .unwrap_or(vec![&env]);
+
+        for i in 0..badges.len() {
+            if let Some(b) = badges.get(i) {
+                if b.mission_id == mission_id && !b.revoked {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    pub fn badge_count(env: Env, reaper: Address) -> u32 {
+        env.storage().persistent()
+            .get(&DataKey::BadgeCount(reaper))
+            .unwrap_or(0)
+    }
+
+    pub fn total_badges(env: Env) -> u32 {
+        env.storage().persistent()
+            .get(&DataKey::TotalBadges)
+            .unwrap_or(0)
+    }
+
+    /// Get top reapers sorted by badge count (capped at limit).
+    pub fn get_top_reapers(env: Env, limit: u32) -> Vec<LeaderboardEntry> {
+        let all: Vec<Address> = env.storage().persistent()
+            .get(&DataKey::AllReapers).unwrap_or(vec![&env]);
+
+        let mut entries: Vec<LeaderboardEntry> = vec![&env];
+        for i in 0..all.len() {
+            let reaper = all.get(i).unwrap();
+            let count: u32 = env.storage().persistent()
+                .get(&DataKey::BadgeCount(reaper.clone())).unwrap_or(0);
+            entries.push_back(LeaderboardEntry { reaper, badge_count: count });
+        }
+
+        // Simple insertion sort by badge_count descending (limited data)
+        let len = entries.len();
+        for i in 1..len {
+            let current = entries.get(i).unwrap();
+            let mut j = i;
+            while j > 0 {
+                let prev = entries.get(j - 1).unwrap();
+                if prev.badge_count < current.badge_count {
+                    entries.set(j, prev);
+                    j -= 1;
+                } else {
+                    break;
+                }
+            }
+            entries.set(j, current);
+        }
+
+        // Trim to limit
+        let mut result: Vec<LeaderboardEntry> = vec![&env];
+        let cap = if limit < len as u32 { limit } else { len as u32 };
+        for i in 0..cap {
+            result.push_back(entries.get(i).unwrap());
+        }
+
+        result
+    }
+
+    // ── INTERNALS ────────────────────────────────────────────────
+
+    fn require_admin(env: &Env, caller: &Address) {
+        let admin: Address = env.storage().instance()
+            .get(&DataKey::Admin).expect("Not initialized");
+        if *caller != admin { panic!("Not admin"); }
     }
 }
