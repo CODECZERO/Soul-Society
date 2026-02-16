@@ -18,7 +18,7 @@ import {
   Users,
   Building2
 } from "lucide-react"
-import { apiService } from "@/lib/api-service"
+import { getPosts, getDonations } from "@/lib/api-service"
 import Link from "next/link"
 
 export default function FeaturesPage() {
@@ -36,11 +36,11 @@ export default function FeaturesPage() {
         setIsLoading(true)
 
         // Get posts count
-        const postsResponse = await apiService.getPosts()
+        const postsResponse = await getPosts()
         const posts = postsResponse.success ? postsResponse.data : []
 
         // Get donations count
-        const donationsResponse = await apiService.getDonations()
+        const donationsResponse = await getDonations()
         const donations = donationsResponse.success ? donationsResponse.data : []
 
         // Calculate total amount raised
@@ -175,7 +175,7 @@ export default function FeaturesPage() {
             <Card className="p-8 bg-zinc-950 border-zinc-900 rounded-none text-center group hover:border-orange-500/50 transition-all">
               <DollarSign className="h-10 w-10 text-orange-500 mx-auto mb-4 group-hover:scale-110 transition-transform" />
               <p className="text-4xl font-black text-white italic tracking-tighter mb-1">₹{stats.totalAmountRaised.toLocaleString()}</p>
-              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-[0.2em]">Absorbed Reiatsu</p>
+              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-[0.2em]">Total Donated</p>
             </Card>
             <Card className="p-8 bg-zinc-950 border-zinc-900 rounded-none text-center group hover:border-orange-500/50 transition-all">
               <Users className="h-10 w-10 text-orange-500 mx-auto mb-4 group-hover:scale-110 transition-transform" />
