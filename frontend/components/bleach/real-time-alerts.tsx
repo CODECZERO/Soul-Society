@@ -1,63 +1,63 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useToast } from "@/components/ui/use-toast"
-import { ShieldAlert, Zap, Sword } from "lucide-react"
-import { apiService } from "@/lib/api-service"
+import { getPosts } from "@/lib/api-service"
 
 export function RealTimeAlerts() {
     const { toast } = useToast()
-    const [lastSealedCount, setLastSealedCount] = useState<number | null>(null)
+    const lastSealedCountRef = useRef<number | null>(null)
 
     useEffect(() => {
         // Initial load to establish baseline
         checkNewMissions(true)
 
-        // Poll every 15 seconds for new sealed missions (Seireitei Intel Sync)
+        // Poll every 30 seconds for completed missions
         const interval = setInterval(() => {
             checkNewMissions()
-        }, 15000)
+        }, 30000)
 
         return () => clearInterval(interval)
-    }, [lastSealedCount])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const checkNewMissions = async (isInitial = false) => {
         try {
-            const response = await apiService.getPosts()
+            const response = await getPosts()
             if (response.success && Array.isArray(response.data)) {
-                const sealedMissions = response.data.filter(p => p.Status === "Completed")
+                const completedMissions = response.data.filter(p => p.Status === "Completed")
 
                 if (isInitial) {
-                    setLastSealedCount(sealedMissions.length)
+                    lastSealedCountRef.current = completedMissions.length
                     return
                 }
 
-                if (lastSealedCount !== null && sealedMissions.length > lastSealedCount) {
-                    const newMission = sealedMissions[0] // Get the most recent one
+                if (lastSealedCountRef.current !== null && completedMissions.length > lastSealedCountRef.current) {
+                    const newMission = completedMissions[0]
 
                     toast({
-                        title: "SEIREITEI ALERT: MISSION SEALED",
+                        title: "Mission Completed",
                         description: (
                             <div className="flex flex-col gap-2 mt-2">
-                                <p className="text-xs font-black italic uppercase text-orange-500 tracking-tighter">
+                                <p className="text-xs font-semibold text-amber-400 tracking-tight">
                                     {newMission.Title || newMission.title}
                                 </p>
-                                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-                                    Strategic threat eliminated from Rukongai.
+                                <p className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">
+                                    Campaign goal reached successfully.
                                 </p>
                             </div>
                         ),
                         variant: "default",
-                        className: "bg-black border-2 border-orange-600 rounded-none text-white font-black italic",
+                        className: "bg-zinc-950 border border-zinc-800 text-white",
                     })
 
-                    setLastSealedCount(sealedMissions.length)
+                    lastSealedCountRef.current = completedMissions.length
                 }
             }
-        } catch (err) {
-            // Silently ignore polling errors to not disrupt UX
+        } catch {
+            // Silently ignore polling errors
         }
     }
 
-    return null // Invisible component that manages global side-effect
+    return null
 }
