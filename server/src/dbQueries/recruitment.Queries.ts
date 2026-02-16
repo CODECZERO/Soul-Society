@@ -1,27 +1,25 @@
-import { ngoModel } from '../model/user(Ngo).model.js';
+import { seireiteiVault } from '../services/stellar/seireiteiVault.service.js';
 
 /**
  * Enlist a Soul Reaper (User) into an NGO's Division
  */
 const enlistMember = async (ngoId: string, walletAddr: string) => {
   try {
-    const ngo = await ngoModel.findById(ngoId);
+    const ngo = await seireiteiVault.get('Users', ngoId);
     if (!ngo) throw new Error('Division not found');
 
-    // Initialize Members array if it doesn't exist (safety check)
     if (!ngo.Members) ngo.Members = [];
 
-    // Check if already a member
     if (ngo.Members.includes(walletAddr)) {
       return { success: false, message: 'Already enlisted in this division' };
     }
 
     ngo.Members.push(walletAddr);
-    await ngo.save();
+    await seireiteiVault.put('Users', ngoId, ngo);
 
-    return { success: true, message: 'Successfully enlisted in division' };
+    return { success: true, message: 'Successfully enlisted in division on-chain' };
   } catch (error) {
-    console.error('Error enlisting member:', error);
+    console.error('Error enlisting member on blockchain:', error);
     throw error;
   }
 };
@@ -31,10 +29,10 @@ const enlistMember = async (ngoId: string, walletAddr: string) => {
  */
 const getDivisionMembers = async (ngoId: string) => {
   try {
-    const ngo = await ngoModel.findById(ngoId).select('Members');
+    const ngo = await seireiteiVault.get('Users', ngoId);
     return ngo?.Members || [];
   } catch (error) {
-    console.error('Error getting members:', error);
+    console.error('Error getting members from blockchain:', error);
     throw error;
   }
 };
