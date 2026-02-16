@@ -9,32 +9,24 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useParams } from "next/navigation"
 import { Users, ExternalLink, Shield, Target } from "lucide-react"
 import Link from "next/link"
+import { useAppDispatch, useAppSelector } from "@/hooks/use-redux"
+import { fetchCommunityById, clearCurrentCommunity } from "@/lib/redux/slices/community-slice"
 
 export default function CommunityDetailPage() {
     const { id } = useParams()
-    const [community, setCommunity] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
+    const dispatch = useAppDispatch()
+    const { currentCommunity: community, isLoading } = useAppSelector((state) => state.communities)
 
     useEffect(() => {
-        if (!id) return;
-        const fetchDetails = async () => {
-            try {
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-                const response = await fetch(`${baseUrl}/community/${id}`);
-                const res = await response.json();
-                if (res.success && res.data) {
-                    setCommunity(res.data);
-                }
-            } catch (error) {
-                
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchDetails();
-    }, [id]);
+        if (id) {
+            dispatch(fetchCommunityById(id as string))
+        }
+        return () => {
+            dispatch(clearCurrentCommunity())
+        }
+    }, [id, dispatch])
 
-    if (loading) {
+    if (isLoading && !community) {
         return (
             <div className="min-h-screen bg-black text-white">
                 <Header />

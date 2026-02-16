@@ -9,9 +9,11 @@ import { CreateTaskModal } from "@/components/create-task-modal"
 import { UploadProofModal } from "@/components/upload-proof-modal"
 import { NGOSendPaymentModal } from "@/components/ngo-send-payment-modal"
 import { Plus, Upload, CheckCircle2, Clock, Loader2, Send } from "lucide-react"
-import { useSelector } from "react-redux"
-import type { RootState } from "@/lib/redux/store"
-import { getPosts, getDonations, type Post } from "@/lib/api-service"
+import { useAppDispatch, useAppSelector } from "@/hooks/use-redux"
+import { fetchPosts } from "@/lib/redux/slices/posts-slice"
+import { fetchAllDonations } from "@/lib/redux/slices/donations-slice"
+import { fetchNgoStats } from "@/lib/redux/slices/stats-slice"
+import { useDebouncedDispatch } from "@/hooks/use-debounced-dispatch"
 
 // Simple chart component to avoid recharts SSR issues
 const SimpleChart = ({ data }: { data: any[] }) => {
@@ -44,22 +46,35 @@ const SimpleChart = ({ data }: { data: any[] }) => {
 
 export default function NGODashboardPage() {
   const router = useRouter()
-  const { isAuthenticated, ngoProfile } = useSelector((state: RootState) => state.ngoAuth)
+  const dispatch = useAppDispatch()
+  const debouncedDispatch = useDebouncedDispatch()
+
+  const { isAuthenticated, ngoProfile } = useAppSelector((state) => state.ngoAuth)
+  const { posts, isLoading: postsLoading } = useAppSelector((state) => state.posts)
+  const { donations, isLoading: donationsLoading } = useAppSelector((state) => state.donations)
+  const { ngoStats, isLoading: statsLoading } = useAppSelector((state) => state.stats)
 
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false)
   const [isUploadProofOpen, setIsUploadProofOpen] = useState(false)
   const [isSendPaymentOpen, setIsSendPaymentOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState<any>(null)
-  const [posts, setPosts] = useState<Post[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [stats, setStats] = useState({
-    totalDonations: 0,
-    fundsUsed: 0,
-    remainingBalance: 0,
-    verifiedProjects: 0,
-  })
-  const [donations, setDonations] = useState<any[]>([])
-  const [chartData, setChartData] = useState<any[]>([])
+
+  const isLoading = postsLoading || donationsLoading || statsLoading
+
+  const currentNgoStats = ngoProfile ? ngoStats[ngoProfile.id] : null
+
+  const stats = {
+    totalDonations: currentNgoStats?.totalRaised || 0,
+    fundsUsed: currentNgoStats?.totalSpent || 0,
+    remainingBalance: currentNgoStats?.remainingBalance || 0,
+    verifiedProjects: posts.filter(p => p.NgoRef === ngoProfile?.id).length,
+  }
+
+  const chartData = currentNgoStats?.chartData.map((d: any) => ({
+    name: d.name,
+    value: d.donations,
+    expenses: d.expenses
+  })) || []
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -70,64 +85,12 @@ export default function NGODashboardPage() {
 
   // Load NGO posts and stats
   useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        setIsLoading(true)
-        const postsResponse = await getPosts()
-        if (postsResponse.success) {
-          const ngoPosts = postsResponse.data.filter((post: Post) => post.NgoRef === ngoProfile?.id)
-          setPosts(ngoPosts)
-
-          // Load advanced stats from backend
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
-          const statsResponse = await fetch(`${baseUrl}/stats/ngo/${ngoProfile?.id}`)
-          const statsRes = await statsResponse.json()
-
-          if (statsRes.success) {
-            setStats({
-              totalDonations: statsRes.data.totalRaised,
-              fundsUsed: statsRes.data.totalSpent,
-              remainingBalance: statsRes.data.remainingBalance,
-              verifiedProjects: ngoPosts.length,
-            })
-            setChartData(statsRes.data.chartData.map((d: any) => ({
-              name: d.name,
-              value: d.donations,
-              expenses: d.expenses
-            })))
-          } else {
-            // Fallback for demo
-            const totalRaised = ngoPosts.reduce((sum, post) => sum + (post.CollectedAmount || 0), 0)
-            const fundsUsed = Math.floor(totalRaised * 0.68)
-            const remainingBalance = totalRaised - fundsUsed
-
-            setStats({
-              totalDonations: totalRaised,
-              fundsUsed,
-              remainingBalance,
-              verifiedProjects: ngoPosts.length,
-            })
-          }
-
-          const allDonationsResponse = await getDonations()
-          if (allDonationsResponse.success) {
-            const ngoPostIds = ngoPosts.map(p => p._id)
-            const ngoDonations = allDonationsResponse.data.filter((d: any) =>
-              ngoPostIds.includes(d.postIDs)
-            )
-            setDonations(ngoDonations)
-          }
-        }
-      } catch (error) {
-        } finally {
-        setIsLoading(false)
-      }
-    }
-
     if (isAuthenticated && ngoProfile) {
-      loadDashboardData()
+      debouncedDispatch(fetchPosts(false), 500)
+      debouncedDispatch(fetchAllDonations(false), 500)
+      debouncedDispatch(fetchNgoStats({ ngoId: ngoProfile.id }), 500)
     }
-  }, [isAuthenticated, ngoProfile])
+  }, [isAuthenticated, ngoProfile, debouncedDispatch])
 
   if (!isAuthenticated) {
     return (
@@ -140,7 +103,9 @@ export default function NGODashboardPage() {
     )
   }
 
-  const tasks = posts.map(post => {
+  const ngoPosts = posts.filter(post => post.NgoRef === ngoProfile?.id)
+
+  const tasks = ngoPosts.map(post => {
     const taskDonations = donations.filter(d => d.postIDs === post._id)
     const totalRaised = taskDonations.reduce((sum, d) => sum + (d.Amount || 0), 0)
 

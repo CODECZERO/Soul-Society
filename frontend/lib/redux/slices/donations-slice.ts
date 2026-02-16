@@ -4,7 +4,7 @@ import { donationsApi } from "@/lib/api-client"
 interface Donation {
   _id: string
   TransactionId: string
-  postID: string
+  postIDs: string
   Amount: number
   DonorAddress: string
   createdAt: string
@@ -17,6 +17,8 @@ interface DonationsState {
   error: string | null
   currentDonation: Donation | null
   postDonations: Donation[]
+  lastFetched: number | null
+  refreshCounter: number
 }
 
 const initialState: DonationsState = {
@@ -25,12 +27,33 @@ const initialState: DonationsState = {
   error: null,
   currentDonation: null,
   postDonations: [],
+  lastFetched: null,
+  refreshCounter: 0,
 }
+
+// TTL in milliseconds (5 minutes)
+const CACHE_TTL = 5 * 60 * 1000
 
 // Async thunks
 export const fetchAllDonations = createAsyncThunk(
   "donations/fetchAllDonations",
-  async (_, { rejectWithValue }) => {
+  async (force: boolean = false, { getState, rejectWithValue, dispatch }) => {
+    const state = (getState() as any).donations as DonationsState
+    const now = Date.now()
+
+    // 1. Check if we should use cache
+    if (!force && state.lastFetched && now - state.lastFetched < CACHE_TTL && state.donations.length > 0) {
+      return state.donations // Return cached data
+    }
+
+    // 2. Refresh counter logic
+    if (!force) {
+      dispatch(incrementDonationRefreshCounter())
+      if (state.refreshCounter < 3) {
+        if (state.donations.length > 0) return state.donations
+      }
+    }
+
     try {
       const response = await donationsApi.getAll()
       if (!response.success) {
@@ -89,6 +112,12 @@ const donationsSlice = createSlice({
     clearPostDonations: (state) => {
       state.postDonations = []
     },
+    incrementDonationRefreshCounter: (state) => {
+      state.refreshCounter += 1
+    },
+    resetDonationRefreshCounter: (state) => {
+      state.refreshCounter = 0
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -100,6 +129,8 @@ const donationsSlice = createSlice({
       .addCase(fetchAllDonations.fulfilled, (state, action) => {
         state.isLoading = false
         state.donations = action.payload || []
+        state.lastFetched = Date.now()
+        state.refreshCounter = 0 // Reset on success
       })
       .addCase(fetchAllDonations.rejected, (state, action) => {
         state.isLoading = false
@@ -134,5 +165,5 @@ const donationsSlice = createSlice({
   },
 })
 
-export const { clearDonationsError, clearCurrentDonation, clearPostDonations } = donationsSlice.actions
+export const { clearDonationsError, clearCurrentDonation, clearPostDonations, incrementDonationRefreshCounter, resetDonationRefreshCounter } = donationsSlice.actions
 export default donationsSlice.reducer

@@ -1,14 +1,16 @@
 import { Router } from 'express';
 import { getAllPost, createPost } from '../controler/post.controler.js';
 import { verifyToken } from '../midelware/verify.midelware.js';
+import { validate } from '../midelware/validate.midelware.js';
+import { createPostSchema } from '../schemas/post.schema.js';
 
 const router = Router();
 
 // GET /api/posts - Get all posts
 router.get('/', getAllPost);
 
-// POST /api/posts - Create new post (requires authentication)
-router.post('/', verifyToken, createPost);
+// POST /api/posts - Create new post (requires authentication with validation)
+router.post('/', verifyToken, validate(createPostSchema), createPost);
 
 // Additional routes can be added here for:
 // - GET /api/posts/:id - Get specific post

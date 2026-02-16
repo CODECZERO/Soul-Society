@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { connectDB } from './util/appStartup.util.js';
@@ -12,20 +13,14 @@ dotenv.config();
 const app = express();
 
 // Middleware
+app.use(helmet());
 if (!process.env.FRONTEND_URL) {
   throw new Error('FRONTEND_URL is not defined in environment variables');
 }
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      const allowedOrigins = process.env.FRONTEND_URL?.split(',') || [];
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: ['https://soul-society-three.vercel.app', 'http://localhost:3000', 'http://localhost:5173'],
     credentials: true,
   })
 );
@@ -97,6 +92,11 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     success: false,
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
+    diagnostic: process.env.NODE_ENV !== 'production' ? {
+      url: req.originalUrl,
+      method: req.method,
+      error: err.message
+    } : undefined
   });
 });
 

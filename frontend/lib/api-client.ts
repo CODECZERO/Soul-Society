@@ -123,7 +123,7 @@ class ApiClient {
 
       return data;
     } catch (error) {
-      
+
       throw error;
     }
   }
@@ -158,3 +158,18 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient();
+
+export const postsApi = {
+  getAll: () => apiClient.request<any[]>('/posts'),
+  getById: (id: string) => apiClient.request<any>(`/posts/${id}`),
+  create: (data: any) => apiClient.request<any>('/posts', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, true),
+};
+
+export const donationsApi = {
+  getAll: () => apiClient.request<any[]>('/donations'),
+  getById: (id: string) => apiClient.request<any>(`/donations/${id}`),
+  getByPost: (postId: string) => apiClient.request<any[]>(`/donations/post/${postId}`),
+};

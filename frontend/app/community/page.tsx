@@ -8,31 +8,19 @@ import { Button } from "@/components/ui/button"
 import { Users, Target, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
-import { useSelector } from "react-redux"
-import type { RootState } from "@/lib/redux/store"
+import { useAppDispatch, useAppSelector } from "@/hooks/use-redux"
+import { fetchCommunities } from "@/lib/redux/slices/community-slice"
+import { useDebouncedDispatch } from "@/hooks/use-debounced-dispatch"
 
 export default function CommunityPage() {
-    const [communities, setCommunities] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
-    const { isAuthenticated: ngoAuthenticated, ngoProfile } = useSelector((state: RootState) => state.ngoAuth)
+    const dispatch = useAppDispatch()
+    const debouncedDispatch = useDebouncedDispatch()
+    const { communities, isLoading } = useAppSelector((state) => state.communities)
+    const { isAuthenticated: ngoAuthenticated, ngoProfile } = useAppSelector((state) => state.ngoAuth)
 
     useEffect(() => {
-        const fetchCommunities = async () => {
-            try {
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-                const response = await fetch(`${baseUrl}/community/all`);
-                const res = await response.json();
-                if (res.success && Array.isArray(res.data)) {
-                    setCommunities(res.data);
-                }
-            } catch (error) {
-                
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchCommunities();
-    }, []);
+        debouncedDispatch(fetchCommunities(false), 500)
+    }, [debouncedDispatch])
 
     return (
         <div className="min-h-screen bg-zinc-950 text-white selection:bg-amber-500/30">
@@ -51,7 +39,7 @@ export default function CommunityPage() {
                     </p>
                 </div>
 
-                {loading ? (
+                {isLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[1, 2, 3].map((i) => (
                             <div key={i} className="h-64 bg-zinc-900/50 animate-pulse border border-zinc-800 rounded-lg" />

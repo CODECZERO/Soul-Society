@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { Header } from "@/components/header"
 import { Trophy, Sword, Shield, Zap, Search, Star } from "lucide-react"
-import { useSelector } from "react-redux"
-import type { RootState } from "@/lib/redux/store"
+import { useAppDispatch, useAppSelector } from "@/hooks/use-redux"
+import { fetchLeaderboard, fetchContributors } from "@/lib/redux/slices/stats-slice"
+import { useDebouncedDispatch } from "@/hooks/use-debounced-dispatch"
 
 interface LeaderboardItem {
     divisionId: string
@@ -16,37 +17,27 @@ interface LeaderboardItem {
 }
 
 export default function LeaderboardPage() {
-    const { searchQuery } = useSelector((state: RootState) => state.ui)
-    const { isAuthenticated: ngoAuthenticated, ngoProfile } = useSelector((state: RootState) => state.ngoAuth)
-    const [leaderboard, setLeaderboard] = useState<any[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+    const dispatch = useAppDispatch()
+    const debouncedDispatch = useDebouncedDispatch()
+    const { searchQuery } = useAppSelector((state) => state.ui)
+    const { isAuthenticated: ngoAuthenticated, ngoProfile } = useAppSelector((state) => state.ngoAuth)
+    const { leaderboard, contributors, isLoading } = useAppSelector((state) => state.stats)
+
     const [activeTab, setActiveTab] = useState<'divisions' | 'contributors'>(ngoAuthenticated ? 'contributors' : 'divisions')
 
     useEffect(() => {
-        fetchLeaderboard()
-    }, [activeTab])
+        if (activeTab === 'divisions') {
+            debouncedDispatch(fetchLeaderboard(false), 500)
+        } else {
+            debouncedDispatch(fetchContributors(ngoAuthenticated ? ngoProfile?.id || null : null), 500)
+        }
+    }, [activeTab, ngoAuthenticated, ngoProfile, debouncedDispatch])
 
-    const fetchLeaderboard = async () => {
-        try {
-            setIsLoading(true)
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-            let url = `${baseUrl}/stats/leaderboard`;
-
-            if (activeTab === 'contributors') {
-                url = `${baseUrl}/stats/leaderboard/contributors`;
-                if (ngoAuthenticated && ngoProfile) {
-                    url += `?ngoId=${ngoProfile.id}`;
-                }
-            }
-
-            const response = await fetch(url)
-            const data = await response.json()
-            if (data.success) {
-                setLeaderboard(data.data)
-            }
-        } catch (err) {
-            } finally {
-            setIsLoading(false)
+    const handleManualRefresh = () => {
+        if (activeTab === 'divisions') {
+            dispatch(fetchLeaderboard(true))
+        } else {
+            dispatch(fetchContributors(ngoAuthenticated ? ngoProfile?.id || null : null))
         }
     }
 
@@ -59,10 +50,16 @@ export default function LeaderboardPage() {
         }
     }
 
-    const filteredLeaderboard = leaderboard.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.captain.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const dataToDisplay = activeTab === 'divisions' ? leaderboard : contributors
+
+    const filteredLeaderboard = dataToDisplay.filter(item => {
+        const name = item.name || item.wallet || ""
+        const captain = item.captain || ""
+        return (
+            name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            captain.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+    })
 
     return (
         <div className="min-h-screen bg-black">

@@ -20,6 +20,8 @@ interface PostsState {
   isLoading: boolean
   error: string | null
   currentPost: Post | null
+  lastFetched: number | null
+  refreshCounter: number
 }
 
 const initialState: PostsState = {
@@ -27,12 +29,33 @@ const initialState: PostsState = {
   isLoading: false,
   error: null,
   currentPost: null,
+  lastFetched: null,
+  refreshCounter: 0,
 }
+
+// TTL in milliseconds (5 minutes)
+const CACHE_TTL = 5 * 60 * 1000
 
 // Async thunks
 export const fetchPosts = createAsyncThunk(
   "posts/fetchPosts",
-  async (_, { rejectWithValue }) => {
+  async (force: boolean = false, { getState, rejectWithValue, dispatch }) => {
+    const state = (getState() as any).posts as PostsState
+    const now = Date.now()
+
+    // 1. Check if we should use cache
+    if (!force && state.lastFetched && now - state.lastFetched < CACHE_TTL && state.posts.length > 0) {
+      return state.posts // Return cached data
+    }
+
+    // 2. Refresh counter logic for manual overrides
+    if (!force) {
+      dispatch(incrementRefreshCounter())
+      if (state.refreshCounter < 3) {
+        if (state.posts.length > 0) return state.posts
+      }
+    }
+
     try {
       const response = await postsApi.getAll()
       if (!response.success) {
@@ -96,6 +119,12 @@ const postsSlice = createSlice({
     clearCurrentPost: (state) => {
       state.currentPost = null
     },
+    incrementRefreshCounter: (state) => {
+      state.refreshCounter += 1
+    },
+    resetRefreshCounter: (state) => {
+      state.refreshCounter = 0
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -107,6 +136,8 @@ const postsSlice = createSlice({
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.isLoading = false
         state.posts = action.payload || []
+        state.lastFetched = Date.now()
+        state.refreshCounter = 0 // Reset on successful fetch
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.isLoading = false
@@ -141,5 +172,5 @@ const postsSlice = createSlice({
   },
 })
 
-export const { clearPostsError, clearCurrentPost } = postsSlice.actions
+export const { clearPostsError, clearCurrentPost, incrementRefreshCounter, resetRefreshCounter } = postsSlice.actions
 export default postsSlice.reducer

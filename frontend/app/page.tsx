@@ -10,16 +10,16 @@ import { ReaperRegistry } from "@/components/bleach/registry"
 import { getStats, getPosts, type Post } from "@/lib/api-service"
 import { AuthModal } from "@/components/auth-modal"
 import { NGOAuthModal } from "@/components/ngo-auth-modal"
-import { useDispatch, useSelector } from "react-redux"
-import type { RootState, AppDispatch } from "@/lib/redux/store"
+import { useAppDispatch, useAppSelector } from "@/hooks/use-redux"
+import { fetchPosts } from "@/lib/redux/slices/posts-slice"
+import { useDebouncedDispatch } from "@/hooks/use-debounced-dispatch"
 
 export default function Home() {
-  const dispatch = useDispatch<AppDispatch>()
-  const { isAuthenticated: ngoAuthenticated } = useSelector((state: RootState) => state.ngoAuth)
-  const { isConnected: walletConnected } = useSelector((state: RootState) => state.wallet)
-  const [posts, setPosts] = useState<Post[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const dispatch = useAppDispatch()
+  const debouncedDispatch = useDebouncedDispatch()
+  const { isAuthenticated: ngoAuthenticated } = useAppSelector((state) => state.ngoAuth)
+  const { posts, isLoading, error } = useAppSelector((state) => state.posts)
+
   const [stats, setStats] = useState({
     totalRaised: 0,
     activeDonors: 0,
@@ -27,9 +27,10 @@ export default function Home() {
   })
 
   useEffect(() => {
-    loadPosts()
+    // Use debounced dispatch for posts to prevent spam
+    debouncedDispatch(fetchPosts(false), 500)
     loadStats()
-  }, [])
+  }, [debouncedDispatch])
 
   const loadStats = async () => {
     try {
@@ -42,22 +43,11 @@ export default function Home() {
         })
       }
     } catch (err) {
-      }
+    }
   }
 
-  const loadPosts = async () => {
-    try {
-      setIsLoading(true)
-      const response = await getPosts()
-      if (response.success) {
-        setPosts(response.data)
-      }
-    } catch (err) {
-      setError("Failed to load campaigns")
-      setPosts([])
-    } finally {
-      setIsLoading(false)
-    }
+  const loadPosts = () => {
+    dispatch(fetchPosts(true)) // Force refresh if manually called
   }
 
   const convertPostToTask = (post: Post) => ({
@@ -77,7 +67,7 @@ export default function Home() {
     image: post.ImgCid || '',
     Type: post.Type,
     category: post.Type,
-    Location: post.Location,
+    Location: post.Location || 'Global',
     WalletAddr: post.WalletAddr || '',
   })
 
