@@ -4,20 +4,26 @@ import { useState, useEffect, use } from "react"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { DonateModal } from "@/components/donate-modal"
+import { UploadProofModal } from "@/components/upload-proof-modal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { StellarPriceDisplay } from "@/components/stellar-price-display"
-import { Heart, Share2, MapPin, Loader2, ShieldCheck, Activity, Database } from "lucide-react"
-import { apiService, type Post, type Donation } from "@/lib/api-service"
+import { Heart, Share2, MapPin, Loader2, ShieldCheck, Activity, Database, FileCheck, ThumbsUp, ThumbsDown } from "lucide-react"
+import { getPosts, getDonationsByPost, getExpensesByPostId, getProofsByTask, voteOnProof, type Post, type Donation } from "@/lib/api-service"
 import { mockTasks } from "@/lib/mock-data"
+import { useWallet } from "@/lib/wallet-context"
+import { submitVoteTransaction } from "@/lib/stellar-utils"
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
+  const { publicKey, signTransaction } = useWallet()
   const [isDonateOpen, setIsDonateOpen] = useState(false)
+  const [isUploadProofOpen, setIsUploadProofOpen] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
   const [task, setTask] = useState<any>(null)
   const [donations, setDonations] = useState<Donation[]>([])
   const [expenses, setExpenses] = useState<any[]>([])
+  const [proofs, setProofs] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
 
@@ -28,7 +34,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         setIsLoading(true)
 
         // Get all posts and find the one matching the ID
-        const postsResponse = await apiService.getPosts()
+        const postsResponse = await getPosts()
 
         if (postsResponse.success && postsResponse.data) {
           // Find the task with matching ID
@@ -71,7 +77,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
             // Fetch donations for this task
             try {
-              const donationsResponse = await apiService.getDonationsByPostId(matchedPost._id)
+              const donationsResponse = await getDonationsByPost(matchedPost._id)
               if (donationsResponse.success && donationsResponse.data) {
                 setDonations(donationsResponse.data)
               }
@@ -81,7 +87,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
             // Fetch expenses for this task
             try {
-              const expensesResponse = await apiService.getExpensesByPostId(matchedPost._id)
+              const expensesResponse = await getExpensesByPostId(matchedPost._id)
               if (expensesResponse.success && expensesResponse.data) {
                 const prevTxn = expensesResponse.data.prevTxn
                 if (prevTxn) {
@@ -90,6 +96,16 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               }
             } catch (err) {
               console.log("No expenses found for this task")
+            }
+
+            // Fetch PROOFS for this task
+            try {
+              const proofsResponse = await getProofsByTask(matchedPost._id)
+              if (proofsResponse.success && proofsResponse.data) {
+                setProofs(proofsResponse.data)
+              }
+            } catch (err) {
+              console.log("No proofs found for this task")
             }
           } else {
             throw new Error("Task not found in API")
@@ -118,20 +134,20 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   if (isLoading || !task) {
     return (
-      <div className="min-h-screen bg-black flex flex-col">
+      <div className="min-h-screen bg-zinc-950 flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center p-4">
           {isLoading ? (
             <div className="text-center">
-              <Loader2 className="h-12 w-12 mx-auto animate-spin text-orange-600" />
-              <p className="mt-4 text-[10px] font-mono uppercase tracking-widest text-zinc-500">SYNCING WITH SEIREITEI INTEL...</p>
+              <Loader2 className="h-10 w-10 mx-auto animate-spin text-amber-400" />
+              <p className="mt-4 text-sm text-zinc-500">Loading campaign details...</p>
             </div>
           ) : (
             <div className="text-center space-y-4">
-              <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">DATA CORRUPTION</h2>
-              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest leading-relaxed">THE REQUESTED SIGNAL HAS BEEN WIPED FROM THE SOUL SOCIETY RECORDS.</p>
-              <Button asChild className="bg-orange-600 hover:bg-orange-700 text-black font-black uppercase italic rounded-none skew-x-[-12deg]">
-                <a href="/" className="px-8"><span className="skew-x-[12deg]">Return to Registry</span></a>
+              <h2 className="text-2xl font-bold text-white">Campaign Not Found</h2>
+              <p className="text-sm text-zinc-500">The requested campaign could not be found.</p>
+              <Button asChild className="bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-md">
+                <a href="/" className="px-6">Return Home</a>
               </Button>
             </div>
           )}
@@ -154,14 +170,14 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const progressPercent = calculateProgress();
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-zinc-950">
       <Header />
 
-      <div className="py-12 px-4 font-sans">
+      <div className="py-10 px-4">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-8 flex items-center gap-4">
-            <div className="w-2 h-10 bg-orange-600" />
-            <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter">Mission Briefing</h1>
+          <div className="mb-8 flex items-center gap-3">
+            <div className="w-1 h-8 bg-amber-500 rounded-full" />
+            <h1 className="text-3xl font-bold text-white tracking-tight">Campaign Details</h1>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
@@ -190,6 +206,32 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    {/* NGO Proof Upload Button */}
+                    {task.ngo === publicKey /* Assuming publicKey is wallet address and task.ngo is mostly the same format */ && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsUploadProofOpen(true)}
+                        className="rounded-none bg-blue-600 border-blue-600 text-white hover:bg-blue-700"
+                      >
+                        <FileCheck className="h-4 w-4 mr-2" /> Upload Proof
+                      </Button>
+                    ) || (
+                        // Fallback check if task.ngo is not matching exact format or if we have the private key match
+                        // For hackathon, just show it if we are on localhost dev mode? No, stick to key check.
+                        // Actually, task.ngo might be "DIV-06". task.WalletAddr is likely the key.
+                        task.WalletAddr === publicKey && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsUploadProofOpen(true)}
+                            className="rounded-none bg-blue-600 border-blue-600 text-white hover:bg-blue-700"
+                          >
+                            <FileCheck className="h-4 w-4 mr-2" /> Upload Proof
+                          </Button>
+                        )
+                      )}
+
                     <Button
                       variant="outline"
                       size="icon"
@@ -210,34 +252,34 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
 
                 {/* Progress */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-end text-[12px] font-black uppercase tracking-widest italic">
-                    <span className="text-orange-500">Reiatsu Infused: {formatNumber(task.CollectedAmount || task.raised)}</span>
-                    <span className="text-zinc-600">Required: {formatNumber(task.NeedAmount || task.goal)}</span>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-end text-sm">
+                    <span className="text-amber-400 font-semibold">Raised: ₹{formatNumber(task.CollectedAmount || task.raised)}</span>
+                    <span className="text-zinc-500">Goal: ₹{formatNumber(task.NeedAmount || task.goal)}</span>
                   </div>
-                  <div className="h-2 bg-zinc-900 overflow-hidden">
+                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-orange-600 transition-all duration-1000"
+                      className="h-full bg-amber-500 rounded-full transition-all duration-1000"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
-                  <p className="text-[10px] font-mono text-zinc-700 uppercase tracking-widest">{donations.length || 0} REAPERS ALIGNED WITH THIS MISSION</p>
+                  <p className="text-xs text-zinc-500">{donations.length || 0} donors contributed to this campaign</p>
                 </div>
               </div>
 
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="bg-zinc-950 border border-zinc-900 rounded-none p-1 gap-1">
-                  <TabsTrigger value="overview" className="rounded-none font-black uppercase italic tracking-widest text-[10px] data-[state=active]:bg-orange-600 data-[state=active]:text-black">Seireitei Intel</TabsTrigger>
-                  <TabsTrigger value="donations" className="rounded-none font-black uppercase italic tracking-widest text-[10px] data-[state=active]:bg-orange-600 data-[state=active]:text-black">Spiritual Infusions</TabsTrigger>
-                  <TabsTrigger value="expenses" className="rounded-none font-black uppercase italic tracking-widest text-[10px] data-[state=active]:bg-orange-600 data-[state=active]:text-black">Treasury Audit</TabsTrigger>
-                  <TabsTrigger value="proofs" className="rounded-none font-black uppercase italic tracking-widest text-[10px] data-[state=active]:bg-orange-600 data-[state=active]:text-black">Tactical Proofs</TabsTrigger>
+                <TabsList className="bg-zinc-900 border border-zinc-800 rounded-md p-1 gap-1">
+                  <TabsTrigger value="overview" className="rounded-md text-xs font-medium data-[state=active]:bg-amber-500 data-[state=active]:text-black">Overview</TabsTrigger>
+                  <TabsTrigger value="donations" className="rounded-md text-xs font-medium data-[state=active]:bg-amber-500 data-[state=active]:text-black">Donations</TabsTrigger>
+                  <TabsTrigger value="expenses" className="rounded-md text-xs font-medium data-[state=active]:bg-amber-500 data-[state=active]:text-black">Expenses</TabsTrigger>
+                  <TabsTrigger value="proofs" className="rounded-md text-xs font-medium data-[state=active]:bg-amber-500 data-[state=active]:text-black">Proofs</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="mt-8">
-                  <div className="prose prose-invert prose-orange max-w-none">
-                    <p className="text-zinc-400 font-medium leading-relaxed whitespace-pre-line text-lg">
-                      {task.Description || task.description || 'No detailed intelligence available for this operation.'}
+                  <div className="prose prose-invert max-w-none">
+                    <p className="text-zinc-400 leading-relaxed whitespace-pre-line">
+                      {task.Description || task.description || 'No details available for this campaign.'}
                     </p>
                   </div>
                 </TabsContent>
@@ -245,27 +287,27 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 <TabsContent value="donations" className="mt-8">
                   <div className="space-y-4">
                     {donations.length === 0 ? (
-                      <div className="text-center py-12 border border-dashed border-zinc-900">
-                        <Activity className="h-8 w-8 text-zinc-800 mx-auto mb-4" />
-                        <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600">NO INFUSIONS DETECTED IN THIS SECTOR</p>
+                      <div className="text-center py-12 border border-dashed border-zinc-800 rounded-md">
+                        <Activity className="h-8 w-8 text-zinc-700 mx-auto mb-4" />
+                        <p className="text-sm text-zinc-500">No donations yet for this campaign</p>
                       </div>
                     ) : (
                       donations.map((donation, index) => (
-                        <div key={donation._id || index} className="bg-zinc-950 border border-zinc-900 rounded-none p-6 space-y-4 hover:border-orange-500/30 transition-colors group">
-                          <div className="flex justify-between items-start mb-3">
+                        <div key={donation._id || index} className="bg-zinc-900/50 border border-zinc-800 rounded-md p-5 space-y-3 hover:border-amber-500/20 transition-colors group">
+                          <div className="flex justify-between items-start mb-2">
                             <div>
-                              <p className="font-black text-white italic uppercase tracking-tighter text-lg">Reaper Contribution</p>
-                              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                                DETECTED AT: {new Date(donation.createdAt || Date.now()).toLocaleString()}
+                              <p className="font-semibold text-white">Donation</p>
+                              <p className="text-xs text-zinc-500">
+                                {new Date(donation.createdAt || Date.now()).toLocaleString()}
                               </p>
                             </div>
-                            <p className="font-black text-xl text-orange-500 italic tracking-tighter">₹{donation.Amount.toLocaleString()}</p>
+                            <p className="font-bold text-lg text-amber-400">₹{donation.Amount.toLocaleString()}</p>
                           </div>
                           <div>
                             <StellarPriceDisplay amount={donation.Amount} />
                           </div>
-                          <p className="text-[10px] font-mono text-zinc-700 uppercase tracking-widest truncate">
-                            REI-ATSU SIGNATURE: {donation.currentTxn}
+                          <p className="text-xs text-zinc-500 truncate">
+                            TX: {donation.currentTxn}
                           </p>
                         </div>
                       ))
@@ -276,24 +318,24 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 <TabsContent value="expenses" className="mt-8">
                   <div className="space-y-4">
                     {expenses.length === 0 ? (
-                      <div className="text-center py-12 border border-dashed border-zinc-900">
-                        <Database className="h-8 w-8 text-zinc-800 mx-auto mb-4" />
-                        <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600">TREASURY VAULT IS UNTOUCHED</p>
+                      <div className="text-center py-12 border border-dashed border-zinc-800 rounded-md">
+                        <Database className="h-8 w-8 text-zinc-700 mx-auto mb-4" />
+                        <p className="text-sm text-zinc-500">No expense records yet</p>
                       </div>
                     ) : (
                       expenses.map((expense, index) => (
-                        <div key={index} className="bg-zinc-950 border border-zinc-900 rounded-none p-6 space-y-4 group">
-                          <div className="flex justify-between items-start mb-3">
+                        <div key={index} className="bg-zinc-900/50 border border-zinc-800 rounded-md p-5 space-y-3 group">
+                          <div className="flex justify-between items-start mb-2">
                             <div>
-                              <p className="font-black text-white italic uppercase tracking-tighter text-lg">Resource Manifestation</p>
-                              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                                AUDITED TIMESTAMP: {new Date().toLocaleDateString()}
+                              <p className="font-semibold text-white">Expense Record</p>
+                              <p className="text-xs text-zinc-500">
+                                {new Date().toLocaleDateString()}
                               </p>
                             </div>
-                            <span className="text-[8px] border border-orange-500/50 text-orange-500 px-2 py-1 font-mono uppercase tracking-[0.2em] italic">SEIREITEI VERIFIED</span>
+                            <span className="text-[10px] border border-green-500/30 text-green-400 px-2 py-0.5 rounded-md">Verified</span>
                           </div>
-                          <p className="text-[10px] font-mono text-zinc-700 uppercase tracking-widest break-all leading-loose">
-                            TACTICAL LOG EXCERPT: {JSON.stringify(expense).substring(0, 150)}...
+                          <p className="text-xs text-zinc-500 break-all leading-relaxed">
+                            {JSON.stringify(expense).substring(0, 150)}...
                           </p>
                         </div>
                       ))
@@ -303,28 +345,110 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
                 <TabsContent value="proofs" className="mt-8">
                   <div className="space-y-4">
-                    {donations.length === 0 ? (
-                      <div className="text-center py-12 border border-dashed border-zinc-900">
-                        <ShieldCheck className="h-8 w-8 text-zinc-800 mx-auto mb-4" />
-                        <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600">PENDING TACTICAL PROOF SUBMISSION</p>
+                    {proofs.length === 0 ? (
+                      <div className="text-center py-12 border border-dashed border-zinc-800 rounded-md">
+                        <ShieldCheck className="h-8 w-8 text-zinc-700 mx-auto mb-4" />
+                        <p className="text-sm text-zinc-500">No proofs submitted yet</p>
                       </div>
                     ) : (
-                      donations.map((proof, index) => (
-                        <div key={proof._id || index} className="bg-zinc-950 border border-zinc-900 rounded-none p-6 space-y-4 hover:border-blue-500/30 transition-colors">
-                          <div className="flex justify-between items-start mb-3">
+                      proofs.map((proof, index) => (
+                        <div key={proof._id || index} className="bg-zinc-900/50 border border-zinc-800 rounded-md p-5 space-y-3 hover:border-amber-500/20 transition-colors">
+                          <div className="flex justify-between items-start mb-2">
                             <div>
-                              <p className="font-black text-white italic uppercase tracking-tighter text-lg">Execution Verified</p>
-                              <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                                INFUSION TARGET: ₹{proof.Amount.toLocaleString()}
+                              <p className="font-semibold text-white">Expenditure Proof</p>
+                              <p className="text-xs text-zinc-500">
+                                Status: <span className={proof.status === 'Verified' ? 'text-green-400' : proof.status === 'Rejected' ? 'text-red-400' : 'text-yellow-400'}>{proof.status || 'Pending'}</span>
                               </p>
                             </div>
-                            <span className="text-[8px] bg-blue-600 text-black px-2 py-1 font-black uppercase tracking-[0.2em] italic">FORGED IN BATTLE</span>
+                            <span className="text-xs bg-amber-500 text-black px-2 py-0.5 rounded-md font-medium">Evidence</span>
                           </div>
-                          <div>
-                            <StellarPriceDisplay amount={proof.Amount} />
+
+                          <div className="text-sm text-zinc-400 font-mono mb-2">
+                            {proof.description}
                           </div>
-                          <p className="text-[10px] font-mono text-zinc-700 uppercase tracking-widest truncate">
-                            BLOCKCHAIN HASH: {proof.currentTxn}
+
+                          <div className="grid grid-cols-2 gap-4 text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-4">
+                            <div>
+                              <span className="block text-zinc-700">AMOUNT USED</span>
+                              <span className="text-white">₹{proof.amount?.toLocaleString() || 0}</span>
+                            </div>
+                            <div>
+                              <span className="block text-zinc-700">SUBMITTER</span>
+                              <span className="text-white truncate block w-24">{proof.ngoPublicKey?.slice(0, 8)}...</span>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 mt-4">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 border-green-900/30 text-green-500 hover:bg-green-900/20 uppercase tracking-widest text-[10px]"
+                              onClick={async () => {
+                                try {
+                                  if (!publicKey) return alert("Please connect wallet");
+                                  console.log("Voting Legit on-chain...");
+                                  const txResult = await submitVoteTransaction({
+                                    taskId: task._id || task.id,
+                                    voterWallet: publicKey,
+                                    isScam: false
+                                  }, signTransaction);
+
+                                  if (txResult.success) {
+                                    await voteOnProof(proof._id || proof.id, {
+                                      voter: publicKey,
+                                      isScam: false,
+                                      taskId: task._id || task.id
+                                    });
+                                    alert('Vote Verified On-Chain & Recorded');
+                                    // Refresh proofs
+                                    const proofsResponse = await getProofsByTask(task._id);
+                                    if (proofsResponse.success) setProofs(proofsResponse.data);
+                                  }
+                                } catch (e) {
+                                  console.error(e);
+                                  alert("Voting failed: " + (e as Error).message);
+                                }
+                              }}
+                            >
+                              <ThumbsUp className="h-3 w-3 mr-2" /> Verify
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 border-red-900/30 text-red-500 hover:bg-red-900/20 uppercase tracking-widest text-[10px]"
+                              onClick={async () => {
+                                try {
+                                  if (!publicKey) return alert("Please connect wallet");
+                                  console.log("Voting Scam on-chain...");
+                                  const txResult = await submitVoteTransaction({
+                                    taskId: task._id || task.id,
+                                    voterWallet: publicKey,
+                                    isScam: true
+                                  }, signTransaction);
+
+                                  if (txResult.success) {
+                                    await voteOnProof(proof._id || proof.id, {
+                                      voter: publicKey,
+                                      isScam: true,
+                                      taskId: task._id || task.id
+                                    });
+                                    alert('Vote Verified On-Chain & Recorded');
+                                    // Refresh proofs
+                                    const proofsResponse = await getProofsByTask(task._id);
+                                    if (proofsResponse.success) setProofs(proofsResponse.data);
+                                  }
+                                } catch (e) {
+                                  console.error(e);
+                                  alert("Voting failed: " + (e as Error).message);
+                                }
+                              }}
+                            >
+                              <ThumbsDown className="h-3 w-3 mr-2" /> Flag Scam
+                            </Button>
+                          </div>
+
+                          <p className="text-[10px] font-mono text-zinc-700 uppercase tracking-widest truncate mt-2">
+                            TX HASH: {proof.transactionHash}
                           </p>
                         </div>
                       ))
@@ -335,49 +459,49 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             </div>
 
             <div className="lg:col-span-1">
-              <div className="sticky top-24 bg-zinc-950 border border-zinc-900 rounded-none p-8 space-y-8">
+              <div className="sticky top-24 bg-zinc-900/50 border border-zinc-800 rounded-lg p-6 space-y-6">
                 <div className="space-y-2">
-                  <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Spiritual Pressure Level</p>
-                  <div className="text-6xl font-black text-white italic tracking-tighter">
+                  <p className="text-xs text-zinc-500">Campaign Progress</p>
+                  <div className="text-5xl font-bold text-white tracking-tight">
                     {Math.floor((((task.CollectedAmount || task.raised || 0) / (task.NeedAmount || task.goal || 1)) * 100) || 0)}%
                   </div>
                   <div className="flex justify-between items-baseline">
-                    <span className="text-sm font-mono text-zinc-500 uppercase">REMAINING:</span>
-                    <span className="text-2xl font-black text-orange-500 italic">₹{Math.max(0, (task.NeedAmount || task.goal || 0) - (task.CollectedAmount || task.raised || 0)).toLocaleString()}</span>
+                    <span className="text-sm text-zinc-500">Remaining:</span>
+                    <span className="text-xl font-bold text-amber-400">₹{Math.max(0, (task.NeedAmount || task.goal || 0) - (task.CollectedAmount || task.raised || 0)).toLocaleString()}</span>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <Button
                     onClick={() => setIsDonateOpen(true)}
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-black font-black uppercase italic rounded-none tracking-widest h-14 skew-x-[-12deg]"
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-md h-11"
                     size="lg"
                   >
-                    <span className="skew-x-[12deg]">Release Reiatsu</span>
+                    Donate Now
                   </Button>
 
-                  <Button variant="outline" className="w-full bg-black border-zinc-800 text-white font-black uppercase italic rounded-none tracking-widest skew-x-[-12deg]" size="lg">
-                    <span className="skew-x-[12deg]">Transmit Order</span>
+                  <Button variant="outline" className="w-full bg-zinc-950 border-zinc-700 text-white font-medium rounded-md" size="lg">
+                    Share Campaign
                   </Button>
                 </div>
 
-                <div className="pt-8 border-t border-zinc-900 space-y-4">
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                    <div className="w-1 h-1 bg-orange-500 animate-pulse" />
-                    Verified by Seireitei Protocol
+                <div className="pt-6 border-t border-zinc-800 space-y-3">
+                  <div className="flex items-center gap-2 text-xs text-zinc-500">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                    Verified on Stellar Network
                   </div>
-                  <div className="space-y-3 font-mono">
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="text-zinc-600 uppercase">ALIGNMENTS</span>
-                      <span className="text-white font-bold">{donations.length}</span>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">Total Donors</span>
+                      <span className="text-white font-medium">{donations.length}</span>
                     </div>
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="text-zinc-600 uppercase">AUDITED RECORDS</span>
-                      <span className="text-white font-bold">{donations.length}</span>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">Audit Records</span>
+                      <span className="text-white font-medium">{donations.length}</span>
                     </div>
                     <div className="pt-2">
-                      <span className="text-[10px] text-zinc-600 uppercase block mb-1">TOTAL SPIRIT ENERGY GATHERED</span>
-                      <div className="text-3xl font-black text-white italic tracking-tighter">₹{formatNumber(task.CollectedAmount || task.raised || 0)}</div>
+                      <span className="text-xs text-zinc-500 block mb-1">Total Raised</span>
+                      <div className="text-2xl font-bold text-white tracking-tight">₹{formatNumber(task.CollectedAmount || task.raised || 0)}</div>
                     </div>
                   </div>
                 </div>
@@ -395,6 +519,15 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         task={{
           ...task,
           WalletAddr: task.WalletAddr || task.walletAddr || task.walletAddress || task.WalletAddress,
+          id: task._id || task.id,
+        }}
+      />
+
+      <UploadProofModal
+        isOpen={isUploadProofOpen}
+        onClose={() => setIsUploadProofOpen(false)}
+        task={{
+          ...task,
           id: task._id || task.id,
         }}
       />
