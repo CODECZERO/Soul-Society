@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { CheckCircle2, Loader2, Upload, AlertCircle, Wallet } from "lucide-react"
-import { apiService } from "@/lib/api-service"
+import { uploadToIPFS, walletPay } from "@/lib/api-service"
 
 interface NGOSendPaymentModalProps {
   isOpen: boolean
@@ -40,15 +40,15 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
     }
 
     setError(null)
-    
+
     try {
       // Step 1: Upload receipt to IPFS
       setStep("uploading")
       let cid = "Pending"
-      
+
       if (formData.file) {
         try {
-          const uploadResponse = await apiService.uploadToIPFS(formData.file)
+          const uploadResponse = await uploadToIPFS(formData.file)
           if (uploadResponse.success) {
             cid = uploadResponse.data.cid || uploadResponse.data.hash
             setIpfsCid(cid)
@@ -62,7 +62,7 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
 
       // Step 2: Send payment via backend
       setStep("processing")
-      
+
       const paymentData = {
         PublicKey: formData.receiverWallet,
         PostId: task.id || task._id,
@@ -71,9 +71,9 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
       }
 
       console.log("Sending payment:", paymentData)
-      
-      const response = await apiService.walletPay(paymentData)
-      
+
+      const response = await walletPay(paymentData)
+
       if (response.success) {
         setTransactionHash(response.data?.transactionHash || "Success")
         setStep("success")
@@ -127,7 +127,7 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
               <div className="text-sm text-yellow-800">
                 <p className="font-medium">Important</p>
                 <p className="text-xs mt-1">
-                  Payment will be sent from the NGO wallet associated with this task. 
+                  Payment will be sent from the NGO wallet associated with this task.
                   Ensure you have sufficient balance.
                 </p>
               </div>
@@ -172,10 +172,10 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
             <div>
               <label className="text-sm font-medium text-foreground">Receipt/Proof (Required)</label>
               <div className="mt-2 border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:bg-slate-50 transition">
-                <input 
-                  type="file" 
-                  onChange={handleFileChange} 
-                  className="hidden" 
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="hidden"
                   id="payment-file-input"
                   accept="image/*,application/pdf"
                 />
@@ -192,9 +192,9 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
             <Button
               onClick={handleSubmit}
               disabled={
-                !formData.receiverWallet || 
-                !formData.amount || 
-                !formData.description || 
+                !formData.receiverWallet ||
+                !formData.amount ||
+                !formData.description ||
                 !formData.file ||
                 parseFloat(formData.amount) <= 0
               }
@@ -240,14 +240,14 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
                   {formData.receiverWallet}
                 </p>
               </div>
-              
+
               {ipfsCid && ipfsCid !== "Pending" && (
                 <div>
                   <p className="text-xs text-muted-foreground">Receipt CID</p>
                   <p className="font-mono text-xs text-foreground break-all">{ipfsCid}</p>
                 </div>
               )}
-              
+
               {transactionHash && transactionHash !== "Success" && (
                 <div>
                   <p className="text-xs text-muted-foreground">Transaction Hash</p>
