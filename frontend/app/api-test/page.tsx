@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { getPosts, getDonations } from "@/lib/api-service"
 
 export default function APITestPage() {
   const [results, setResults] = useState<any>({
@@ -12,29 +13,33 @@ export default function APITestPage() {
 
   useEffect(() => {
     const testAPIs = async () => {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-      
       // Test posts endpoint
       try {
-        const postsRes = await fetch(`${baseUrl}/posts`)
-        const postsData = await postsRes.json()
-        setResults(prev => ({ ...prev, posts: postsData }))
-      } catch (error) {
-        setResults(prev => ({ 
-          ...prev, 
-          errors: { ...prev.errors, posts: error.message } 
+        const postsRes = await getPosts()
+        if (postsRes.success) {
+          setResults((prev: any) => ({ ...prev, posts: postsRes.data }))
+        } else {
+          throw new Error('Failed to fetch posts')
+        }
+      } catch (error: any) {
+        setResults((prev: any) => ({
+          ...prev,
+          errors: { ...prev.errors, posts: error.message || 'Unknown error' }
         }))
       }
 
       // Test donations endpoint
       try {
-        const donationsRes = await fetch(`${baseUrl}/donations`)
-        const donationsData = await donationsRes.json()
-        setResults(prev => ({ ...prev, donations: donationsData }))
-      } catch (error) {
-        setResults(prev => ({ 
-          ...prev, 
-          errors: { ...prev.errors, donations: error.message } 
+        const donationsRes = await getDonations()
+        if (donationsRes.success) {
+          setResults((prev: any) => ({ ...prev, donations: donationsRes.data }))
+        } else {
+          throw new Error('Failed to fetch donations')
+        }
+      } catch (error: any) {
+        setResults((prev: any) => ({
+          ...prev,
+          errors: { ...prev.errors, donations: error.message || 'Unknown error' }
         }))
       }
     }
@@ -45,7 +50,7 @@ export default function APITestPage() {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">API Connection Test</h1>
-      
+
       <div className="space-y-4">
         <div className="bg-gray-100 p-4 rounded">
           <h2 className="font-semibold">Environment Variable</h2>
