@@ -6,14 +6,14 @@ dotenv.config();
 //this function take's admin private key to fund , new account which are ngo via doing that
 //it create's new account on blockchain
 export const createAccount = async () => {
-  // Check if environment variable is set, if not use a test key for development
-  const baseAccountKey = process.env.BASEACCOUNTST_KEY as string;
-
-  console.log('Using base account key:', baseAccountKey.substring(0, 10) + '...');
+  // Read the admin secret key from environment
+  const baseAccountKey = process.env.STACK_ADMIN_SECRET;
 
   if (!baseAccountKey) {
-    throw new Error('BASEACCOUNTST_KEY environment variable is not set');
+    throw new Error('STACK_ADMIN_SECRET environment variable is not set. Please set it in server/.env');
   }
+
+  console.log('Using base account key:', baseAccountKey.substring(0, 10) + '...');
 
   try {
     const funderKey = Keypair.fromSecret(baseAccountKey);
