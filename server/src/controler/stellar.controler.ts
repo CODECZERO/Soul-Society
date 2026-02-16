@@ -12,6 +12,10 @@ import {
   saveContractWithWallet,
   getLatestData,
 } from '../services/stellar/smartContract.handler.stellar.js';
+import {
+  getTransactionHistory,
+  getTransactionOperations,
+} from '../services/stellar/transaction.history.stellar.js';
 
 export interface GetBalanceRequest {
   publicKey: string;
@@ -117,6 +121,31 @@ const getLatestContractData = AsyncHandler(async (req: Request, res: Response) =
   return res.status(200).json(new ApiResponse(200, data, 'Latest contract data retrieved'));
 });
 
+// Get transaction history for a public key
+const getAccountTransactions = AsyncHandler(async (req: Request, res: Response) => {
+  const { publicKey } = req.params;
+  if (!publicKey) throw new ApiError(400, 'Public key is required');
+
+  const limit = parseInt(req.query.limit as string) || 20;
+  const order = (req.query.order as 'asc' | 'desc') || 'desc';
+
+  const transactions = await getTransactionHistory(publicKey, limit, order);
+  return res.status(200).json(
+    new ApiResponse(200, transactions, `Found ${transactions.length} transactions`)
+  );
+});
+
+// Get operations for a specific transaction
+const getTransactionOps = AsyncHandler(async (req: Request, res: Response) => {
+  const { txHash } = req.params;
+  if (!txHash) throw new ApiError(400, 'Transaction hash is required');
+
+  const operations = await getTransactionOperations(txHash);
+  return res.status(200).json(
+    new ApiResponse(200, operations, `Found ${operations.length} operations`)
+  );
+});
+
 export {
   getWalletBalance,
   sendPayment,
@@ -125,4 +154,6 @@ export {
   deleteStellarAccount,
   saveToSmartContract,
   getLatestContractData,
+  getAccountTransactions,
+  getTransactionOps,
 };
