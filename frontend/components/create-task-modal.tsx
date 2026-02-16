@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { CheckCircle2, Loader2, Upload, Image as ImageIcon, X } from "lucide-react"
-import { apiService } from "@/lib/api-service"
-import { useNGOAuth } from "@/lib/ngo-auth-context"
+import { uploadToIPFS, createPost } from "@/lib/api-service"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/lib/redux/store"
 
 interface CreateTaskModalProps {
   isOpen: boolean
@@ -15,7 +16,7 @@ interface CreateTaskModalProps {
 }
 
 export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
-  const { ngoProfile } = useNGOAuth()
+  const { ngoProfile } = useSelector((state: RootState) => state.ngoAuth)
   const [step, setStep] = useState<"form" | "success">("form")
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -60,22 +61,18 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
     setError(null)
 
     try {
-      let imageCid = "/placeholder.jpg" // Default placeholder
+      let imageCid = "/placeholder.jpg"
 
       // Upload image to IPFS if provided
       if (formData.image) {
         setIsUploadingImage(true)
         try {
-          const uploadResponse = await apiService.uploadToIPFS(formData.image)
+          const uploadResponse = await uploadToIPFS(formData.image)
           if (uploadResponse.success) {
             imageCid = uploadResponse.data.cid || uploadResponse.data.hash
-            console.log("Image uploaded to IPFS:", imageCid)
-          } else {
-            console.warn("Image upload failed, using placeholder")
           }
         } catch (uploadError) {
-          console.error("Image upload error:", uploadError)
-          console.warn("Using placeholder image")
+          console.warn("Image upload failed, using placeholder")
         } finally {
           setIsUploadingImage(false)
         }
@@ -85,7 +82,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
       const ngoWalletAddr = ngoProfile?.publicKey
 
       if (!ngoWalletAddr) {
-        throw new Error("Your Division's public key is missing. Please update your profile.")
+        throw new Error("Your NGO's public key is missing. Please update your profile.")
       }
 
       const postData = {
@@ -95,13 +92,13 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
         Location: formData.location,
         ImgCid: imageCid,
         NeedAmount: formData.goal,
-        WalletAddr: ngoWalletAddr, // NGO's wallet address for receiving donations
-        NgoRef: ngoProfile.id, // Set the NGO reference
+        WalletAddr: ngoWalletAddr,
+        NgoRef: ngoProfile.id,
         DangerLevel: formData.dangerLevel,
         Status: "Active" as "Active",
       }
 
-      const response = await apiService.createPost(postData)
+      const response = await createPost(postData)
 
       if (response.success) {
         setStep("success")
@@ -111,7 +108,6 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create task"
       setError(message)
-      console.error("Create task error:", err)
     } finally {
       setIsProcessing(false)
     }
@@ -127,79 +123,80 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-black border border-zinc-900 rounded-none p-8">
-        <DialogHeader className="mb-8 border-b border-zinc-900 pb-4">
-          <DialogTitle className="text-2xl font-black text-white italic uppercase tracking-tighter">
-            {step === "form" && "Initiate Division Order"}
-            {step === "success" && "Deployment Successful"}
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-md p-8">
+        <DialogHeader className="mb-6 border-b border-zinc-800 pb-4">
+          <DialogTitle className="text-xl font-bold text-white tracking-tight">
+            {step === "form" && "Create New Task"}
+            {step === "success" && "Task Created"}
           </DialogTitle>
         </DialogHeader>
 
         {step === "form" && (
           <div className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-800 text-sm">
+              <div className="bg-red-950/30 border border-red-900/50 rounded-md p-3 text-red-400 text-sm">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest block mb-2">Mission Codename</label>
+              <label className="text-xs font-medium text-zinc-400 block mb-2">Task Title</label>
               <Input
-                placeholder="ENTER OPERATION TITLE..."
+                placeholder="Enter task title..."
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="bg-zinc-950 border-zinc-900 rounded-none text-white font-mono uppercase tracking-widest placeholder:text-zinc-800 focus-visible:ring-orange-600"
+                className="bg-zinc-900 border-zinc-800 rounded-md text-white placeholder:text-zinc-600 focus-visible:ring-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground">Description</label>
+              <label className="text-xs font-medium text-zinc-400 block mb-2">Description</label>
               <Textarea
-                placeholder="Describe your task"
+                placeholder="Describe the task..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="mt-2"
+                className="bg-zinc-900 border-zinc-800 rounded-md text-white placeholder:text-zinc-600 focus-visible:ring-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground">Location</label>
+              <label className="text-xs font-medium text-zinc-400 block mb-2">Location</label>
               <Input
                 placeholder="Enter location"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="bg-zinc-950 border-zinc-900 rounded-none text-white font-mono uppercase tracking-widest placeholder:text-zinc-800 focus-visible:ring-orange-600"
+                className="bg-zinc-900 border-zinc-800 rounded-md text-white placeholder:text-zinc-600 focus-visible:ring-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest block mb-2">Required Reiatsu (₹)</label>
+              <label className="text-xs font-medium text-zinc-400 block mb-2">Required Amount (₹)</label>
               <Input
                 type="number"
-                placeholder="ENTER SPIRITUAL GOAL..."
+                placeholder="Enter funding goal..."
                 value={formData.goal}
                 onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
-                className="bg-zinc-950 border-zinc-900 rounded-none text-white font-mono uppercase tracking-widest placeholder:text-zinc-800 focus-visible:ring-orange-600"
+                className="bg-zinc-900 border-zinc-800 rounded-md text-white placeholder:text-zinc-600 focus-visible:ring-amber-500"
               />
             </div>
 
             <div>
-              <label className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest block mb-2">Tactical Rank</label>
+              <label className="text-xs font-medium text-zinc-400 block mb-2">Category</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full bg-zinc-950 border border-zinc-900 rounded-none px-3 py-2 text-white font-mono uppercase tracking-widest focus:border-orange-600 outline-none"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-white text-sm focus:border-amber-500 outline-none"
               >
-                <option value="Low">Rank C (Low Priority)</option>
-                <option value="Medium">Rank B (Standard)</option>
-                <option value="High">Rank A (High Priority)</option>
-                <option value="Extreme">Rank S (Emergency)</option>
+                <option value="Education">Education</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Environment">Environment</option>
+                <option value="Disaster Relief">Disaster Relief</option>
+                <option value="Community">Community Development</option>
               </select>
             </div>
 
             <div>
-              <label className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest block mb-2">Hollow Danger Level</label>
+              <label className="text-xs font-medium text-zinc-400 block mb-2">Priority Level</label>
               <div className="flex gap-2">
                 {["Low", "Medium", "High", "Extreme"].map((level) => (
                   <Button
@@ -207,25 +204,25 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
                     type="button"
                     variant="outline"
                     onClick={() => setFormData({ ...formData, dangerLevel: level as any })}
-                    className={`flex-1 rounded-none font-black uppercase italic tracking-tighter text-[10px] skew-x-[-12deg] transition-all ${formData.dangerLevel === level
-                      ? level === "Extreme" ? "bg-red-600 text-black border-red-600" : "bg-orange-600 text-black border-orange-600"
-                      : "bg-black text-zinc-500 border-zinc-900 hover:border-orange-500 hover:text-white"
+                    className={`flex-1 rounded-md font-semibold text-xs transition-all ${formData.dangerLevel === level
+                      ? level === "Extreme" ? "bg-red-500/20 text-red-400 border-red-500/50" : "bg-amber-500/20 text-amber-400 border-amber-500/50"
+                      : "bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-600 hover:text-zinc-300"
                       }`}
                   >
-                    <span className="skew-x-[12deg]">{level}</span>
+                    {level}
                   </Button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest block mb-2">Visual Intel</label>
+              <label className="text-xs font-medium text-zinc-400 block mb-2">Image</label>
               {imagePreview ? (
                 <div className="mt-2 relative">
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="w-full h-32 object-cover rounded-none border border-zinc-900"
+                    className="w-full h-32 object-cover rounded-md border border-zinc-800"
                   />
                   <button
                     type="button"
@@ -236,7 +233,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
                   </button>
                 </div>
               ) : (
-                <div className="mt-2 border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:bg-slate-50 transition">
+                <div className="mt-2 border-2 border-dashed border-zinc-800 rounded-md p-6 text-center cursor-pointer hover:bg-zinc-900/50 transition">
                   <input
                     type="file"
                     accept="image/*"
@@ -245,11 +242,11 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
                     id="image-upload"
                   />
                   <label htmlFor="image-upload" className="cursor-pointer">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm font-medium text-foreground">
+                    <ImageIcon className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
+                    <p className="text-sm font-medium text-zinc-400">
                       Click to upload featured image
                     </p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+                    <p className="text-xs text-zinc-600">PNG, JPG, GIF up to 10MB</p>
                   </label>
                 </div>
               )}
@@ -258,7 +255,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
             <Button
               onClick={handleSubmit}
               disabled={isProcessing || isUploadingImage || !formData.title || !formData.goal || !formData.description}
-              className="w-full bg-primary hover:bg-primary/90"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-md"
             >
               {isUploadingImage ? (
                 <>
@@ -280,22 +277,19 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
         {step === "success" && (
           <div className="space-y-4 text-center">
             <div className="flex justify-center">
-              <CheckCircle2 className="h-12 w-12 text-accent" />
+              <CheckCircle2 className="h-12 w-12 text-green-500" />
             </div>
-
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Task Created</p>
-              <p className="font-semibold text-foreground">{formData.title}</p>
+              <p className="text-sm text-zinc-400 mb-1">Task Created Successfully</p>
+              <p className="font-semibold text-white">{formData.title}</p>
             </div>
-
-            <p className="text-sm text-muted-foreground">Your task is now live and donors can start contributing!</p>
-
-            <Button onClick={handleClose} className="w-full bg-primary hover:bg-primary/90">
+            <p className="text-sm text-zinc-400">Your task is now live and donors can start contributing!</p>
+            <Button onClick={handleClose} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-md">
               Done
             </Button>
           </div>
         )}
       </DialogContent>
-    </Dialog >
+    </Dialog>
   )
 }
