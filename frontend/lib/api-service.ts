@@ -9,11 +9,31 @@ import { ipfsService } from './services/ipfs.service';
 import { userService } from './services/user.service';
 import { apiClient } from './api-client';
 
+// Contract services
+import { escrowContractService } from './services/contracts/escrow.service';
+import { missionRegistryContractService } from './services/contracts/mission-registry.service';
+import { reiatsuTokenContractService } from './services/contracts/reiatsu-token.service';
+import { soulBadgeContractService } from './services/contracts/soul-badge.service';
+import { treasuryContractService } from './services/contracts/treasury.service';
+import { soulReaperRegistryContractService } from './services/contracts/soul-reaper-registry.service';
+import { vaultContractService } from './services/contracts/vault.service';
+import { notificationsContractService } from './services/contracts/notifications.service';
+
 export * from './types';
 
 // Export instances
 export { authService, postService, donationService, stellarService, ipfsService, userService };
 export { apiClient };
+export { 
+  escrowContractService, 
+  missionRegistryContractService, 
+  reiatsuTokenContractService, 
+  soulBadgeContractService, 
+  treasuryContractService, 
+  soulReaperRegistryContractService, 
+  vaultContractService,
+  notificationsContractService
+};
 
 // Backward compatibility exports
 export const login = (data: any) => authService.login(data);
@@ -90,5 +110,16 @@ export default {
   donation: donationService,
   stellar: stellarService,
   ipfs: ipfsService,
-  user: userService
+  user: userService,
+  // Contract services
+  contracts: {
+    escrow: escrowContractService,
+    missionRegistry: missionRegistryContractService,
+    reiatsuToken: reiatsuTokenContractService,
+    soulBadge: soulBadgeContractService,
+    treasury: treasuryContractService,
+    soulReaperRegistry: soulReaperRegistryContractService,
+    vault: vaultContractService,
+    notifications: notificationsContractService
+  }
 };
