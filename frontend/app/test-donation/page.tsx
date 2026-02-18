@@ -55,6 +55,7 @@ export default function TestDonationPage() {
       currency: 'XLM',
       taskId,
       publicKey,
+      receiverPublicKey: publicKey,
       signTransaction: signTransactionFunction,
     }))
   }
