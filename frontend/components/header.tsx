@@ -10,14 +10,16 @@ import { logoutNGO } from "@/lib/redux/slices/ngo-auth-slice"
 import { disconnectWallet } from "@/lib/redux/slices/wallet-slice"
 import { clearAllBrowserData } from "@/lib/logout-utils"
 import { Button } from "@/components/ui/button"
-import { LogOut, Heart, Shield, Menu, Search } from "lucide-react"
+import { LogOut, Heart, Shield, Menu, Search, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { setSearchQuery } from "@/lib/redux/slices/ui-slice"
 import { Input } from "@/components/ui/input"
 import { BleachWalletSelector } from "./bleach/wallet-selector"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
 export function Header() {
   const [isMounted, setIsMounted] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const dispatch = useDispatch<AppDispatch>()
   const router = useRouter()
   const { error, isConnected: walletConnected, publicKey } = useSelector((state: RootState) => state.wallet)
@@ -60,17 +62,53 @@ export function Header() {
     );
   }
 
+  const navLinks = (
+    <>
+      {!ngoAuthenticated && !authLoading && (
+        <Link href="/ngo/login" onClick={() => setMobileMenuOpen(false)} className="block text-zinc-400 hover:text-amber-400 transition py-3 text-sm font-medium border-b border-zinc-800">
+          NGO Login
+        </Link>
+      )}
+      <Link href="/explore" onClick={() => setMobileMenuOpen(false)} className="block text-zinc-400 hover:text-amber-400 transition py-3 text-sm font-medium border-b border-zinc-800">
+        Explore
+      </Link>
+      <Link href="/bounty-board" onClick={() => setMobileMenuOpen(false)} className="block text-zinc-400 hover:text-amber-400 transition py-3 text-sm font-medium border-b border-zinc-800">
+        Bounties
+      </Link>
+      <Link href="/leaderboard" onClick={() => setMobileMenuOpen(false)} className="block text-zinc-400 hover:text-amber-400 transition py-3 text-sm font-medium border-b border-zinc-800">
+        Leaderboard
+      </Link>
+      {ngoAuthenticated ? (
+        <Link href="/ngo-dashboard" onClick={() => setMobileMenuOpen(false)} className="block text-zinc-400 hover:text-amber-400 transition py-3 text-sm font-medium border-b border-zinc-800">
+          Dashboard
+        </Link>
+      ) : !authLoading && (
+        <Link href="/verify" onClick={() => setMobileMenuOpen(false)} className="block text-zinc-400 hover:text-amber-400 transition py-3 text-sm font-medium border-b border-zinc-800">
+          Donations
+        </Link>
+      )}
+      <Link href="/community" onClick={() => setMobileMenuOpen(false)} className="block text-zinc-400 hover:text-amber-400 transition py-3 text-sm font-medium border-b border-zinc-800">
+        Community
+      </Link>
+      {walletConnected && publicKey && (
+        <Link href={`/profile/${publicKey}`} onClick={() => setMobileMenuOpen(false)} className="block text-amber-400 hover:text-amber-300 transition py-3 text-sm font-medium border-b border-zinc-800">
+          Profile
+        </Link>
+      )}
+    </>
+  );
+
   return (
     <header className="border-b border-zinc-800 bg-zinc-950 sticky top-0 z-50">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-            <Heart className="text-black h-5 w-5" />
+      <div className="mx-auto max-w-6xl px-3 sm:px-4 py-3 flex justify-between items-center gap-2 min-w-0">
+        <Link href="/" className="flex items-center gap-2 group shrink-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 bg-amber-500 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
+            <Heart className="text-black h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <span className="font-bold text-xl text-white tracking-tight">AidBridge</span>
+          <span className="font-bold text-lg sm:text-xl text-white tracking-tight truncate">AidBridge</span>
         </Link>
 
-        <nav className="hidden md:flex gap-1 bg-zinc-900/50 px-2 py-1 rounded-lg border border-zinc-800/50">
+        <nav className="hidden lg:flex gap-1 bg-zinc-900/50 px-2 py-1 rounded-lg border border-zinc-800/50 shrink-0">
           {!ngoAuthenticated && !authLoading && (
             <Link href="/ngo/login" className="text-zinc-400 hover:text-amber-400 transition px-3 py-1.5 rounded-md text-xs font-medium hover:bg-zinc-800/50">
               NGO Login
@@ -109,25 +147,50 @@ export function Header() {
           )}
         </nav>
 
-        <div className="flex-1 max-w-xs mx-4">
+        <div className="hidden md:block flex-1 min-w-0 max-w-xs mx-2">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500 group-focus-within:text-amber-400 transition-colors" />
             <Input
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => dispatch(setSearchQuery(e.target.value))}
-              className="pl-9 h-8 bg-zinc-900 border-zinc-800 rounded-md text-xs text-white placeholder:text-zinc-600 focus-visible:ring-amber-500 focus-visible:border-amber-500 w-full"
+              className="pl-9 h-8 bg-zinc-900 border-zinc-800 rounded-md text-xs text-white placeholder:text-zinc-600 focus-visible:ring-amber-500 focus-visible:border-amber-500 w-full min-w-0"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden text-zinc-400 hover:text-amber-400 hover:bg-zinc-800/50 h-9 w-9">
+                <Menu className="h-5 w-5" aria-label="Open menu" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[280px] sm:w-[320px] bg-zinc-950 border-zinc-800 p-0">
+              <SheetHeader className="p-4 border-b border-zinc-800">
+                <SheetTitle className="text-left text-white font-semibold">Menu</SheetTitle>
+              </SheetHeader>
+              <div className="p-4">
+                <div className="relative group mb-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                  <Input
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => dispatch(setSearchQuery(e.target.value))}
+                    className="pl-9 h-10 bg-zinc-900 border-zinc-800 rounded-md text-sm text-white"
+                  />
+                </div>
+                {navLinks}
+              </div>
+            </SheetContent>
+          </Sheet>
           {!ngoAuthenticated && !walletConnected && !authLoading && (
             <Button
               onClick={() => setIsWalletSelectorOpen(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-md px-5 h-9"
+              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-md px-3 sm:px-5 h-9 text-sm"
             >
-              Connect Wallet
+              <span className="hidden sm:inline">Connect Wallet</span>
+              <span className="sm:hidden">Connect</span>
             </Button>
           )}
 
