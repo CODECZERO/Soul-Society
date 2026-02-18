@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { CheckCircle2, Loader2, AlertCircle } from "lucide-react"
-import { paymentApi } from "@/lib/api-client"
+import apiService from "@/lib/api-service"
 import { submitDonationTransaction } from "@/lib/stellar-utils"
 import { useWallet } from "@/lib/wallet-context"
 import { getExchangeRate, convertRsToXlm } from "@/lib/exchange-rates"
@@ -80,10 +80,6 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
     setError("")
 
     try {
-      ,
-        senderPublicKey: publicKey
-      })
-
       // Create real Stellar transaction
       const result = await submitDonationTransaction(
         publicKey,
@@ -98,7 +94,7 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
       }
 
       // Verify donation with backend using payment API
-      const verifyResponse = await paymentApi.verifyDonation({
+      const verifyResponse = await apiService.verifyDonation({
         TransactionId: result.hash,
         postID: taskId,
         Amount: Number.parseFloat(amount),
@@ -114,7 +110,7 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
       const message = err instanceof Error ? err.message : "Transaction failed"
       setError(message)
       setStep("error")
-      } finally {
+    } finally {
       setIsProcessing(false)
     }
   }
