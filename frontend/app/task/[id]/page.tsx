@@ -82,7 +82,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 setDonations(donationsResponse.data)
               }
             } catch (err) {
-              }
+            }
 
             // Fetch expenses for this task
             try {
@@ -94,7 +94,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 }
               }
             } catch (err) {
-              }
+            }
 
             // Fetch PROOFS for this task
             try {
@@ -103,7 +103,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 setProofs(proofsResponse.data)
               }
             } catch (err) {
-              }
+            }
           } else {
             throw new Error("Task not found in API")
           }
@@ -293,45 +293,46 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                         const donor = (donation as { Donor?: string }).Donor ?? (donation as any).donor
                         const stellarExplorerUrl = txHash ? `https://stellar.expert/explorer/testnet/tx/${txHash}` : null
                         return (
-                        <div key={donation._id || index} className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-5 space-y-4 hover:border-amber-500/30 transition-colors">
-                          <div className="flex items-start gap-4">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
-                              <Heart className="h-5 w-5" />
-                            </div>
-                            <div className="min-w-0 flex-1 space-y-3">
-                              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                                <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Amount</span>
-                                <p className="font-bold text-xl text-amber-400">₹{Number(donation.Amount ?? 0).toLocaleString()}</p>
+                          <div key={donation._id || index} className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-5 space-y-4 hover:border-amber-500/30 transition-colors">
+                            <div className="flex items-start gap-4">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
+                                <Heart className="h-5 w-5" />
                               </div>
-                              <StellarPriceDisplay amount={donation.Amount} />
-                              <div className="grid gap-1 text-sm">
-                                <div className="flex flex-wrap items-center gap-x-2">
-                                  <span className="text-zinc-500">Date</span>
-                                  <span className="text-zinc-300">{new Date(donation.createdAt || Date.now()).toLocaleString()}</span>
+                              <div className="min-w-0 flex-1 space-y-3">
+                                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                                  <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Amount</span>
+                                  <p className="font-bold text-xl text-amber-400">₹{Number(donation.Amount ?? 0).toLocaleString()}</p>
                                 </div>
-                                {donor && (
+                                <StellarPriceDisplay amount={donation.Amount} />
+                                <div className="grid gap-1 text-sm">
                                   <div className="flex flex-wrap items-center gap-x-2">
-                                    <span className="text-zinc-500">Donor</span>
-                                    <span className="font-mono text-zinc-400 truncate max-w-[200px]" title={donor}>{donor}</span>
+                                    <span className="text-zinc-500">Date</span>
+                                    <span className="text-zinc-300">{new Date(donation.createdAt || Date.now()).toLocaleString()}</span>
                                   </div>
-                                )}
-                                {txHash && (
-                                  <div className="flex flex-wrap items-center gap-x-2">
-                                    <span className="text-zinc-500">Transaction</span>
-                                    {stellarExplorerUrl ? (
-                                      <a href={stellarExplorerUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-amber-400 hover:text-amber-300 truncate max-w-[220px] underline">
-                                        {txHash.slice(0, 8)}…{txHash.slice(-8)}
-                                      </a>
-                                    ) : (
-                                      <span className="font-mono text-zinc-400 truncate max-w-[220px]">{txHash}</span>
-                                    )}
-                                  </div>
-                                )}
+                                  {donor && (
+                                    <div className="flex flex-wrap items-center gap-x-2">
+                                      <span className="text-zinc-500">Donor</span>
+                                      <span className="font-mono text-zinc-400 truncate max-w-[200px]" title={donor}>{donor}</span>
+                                    </div>
+                                  )}
+                                  {txHash && (
+                                    <div className="flex flex-wrap items-center gap-x-2">
+                                      <span className="text-zinc-500">Transaction</span>
+                                      {stellarExplorerUrl ? (
+                                        <a href={stellarExplorerUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-amber-400 hover:text-amber-300 truncate max-w-[220px] underline">
+                                          {txHash.slice(0, 8)}…{txHash.slice(-8)}
+                                        </a>
+                                      ) : (
+                                        <span className="font-mono text-zinc-400 truncate max-w-[220px]">{txHash}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )})
+                        )
+                      })
                     )}
                   </div>
                 </TabsContent>
@@ -396,9 +397,25 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
                             <div>
                               <span className="block text-zinc-700">SUBMITTER</span>
-                              <span className="text-white truncate block w-24">{proof.ngoPublicKey?.slice(0, 8)}...</span>
+                              <span className="text-white truncate block w-24">{proof.ngoPublicKey?.slice(0, 8) || proof.submitter?.slice(0, 8)}...</span>
                             </div>
                           </div>
+
+                          {/* Proof Image */}
+                          {(proof.proofUrl || proof.proofCid) && (
+                            <div className="mt-4 relative aspect-video rounded-md overflow-hidden border border-zinc-800 group/img">
+                              <img
+                                src={proof.proofUrl || ipfsImageUrl(proof.proofCid)}
+                                alt="Expenditure Proof"
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = '/placeholder.jpg';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/20 group-hover/img:bg-transparent transition-colors" />
+                            </div>
+                          )}
 
                           <div className="flex gap-2 mt-4">
                             <Button
@@ -408,7 +425,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                               onClick={async () => {
                                 try {
                                   if (!publicKey) return alert("Please connect wallet");
-                                  
+
                                   const txResult = await submitVoteTransaction({
                                     taskId: task._id || task.id,
                                     voterWallet: publicKey,
@@ -427,7 +444,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                                     if (proofsResponse.success) setProofs(proofsResponse.data);
                                   }
                                 } catch (e) {
-                                  
+
                                   alert("Voting failed: " + (e as Error).message);
                                 }
                               }}
@@ -441,7 +458,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                               onClick={async () => {
                                 try {
                                   if (!publicKey) return alert("Please connect wallet");
-                                  
+
                                   const txResult = await submitVoteTransaction({
                                     taskId: task._id || task.id,
                                     voterWallet: publicKey,
@@ -460,7 +477,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                                     if (proofsResponse.success) setProofs(proofsResponse.data);
                                   }
                                 } catch (e) {
-                                  
+
                                   alert("Voting failed: " + (e as Error).message);
                                 }
                               }}
