@@ -45,7 +45,9 @@ const getAllPost = AsyncHandler(async (req: Request, res: Response) => {
     const postsWithCollected = await Promise.all(
       postData.map(async (post) => {
         try {
-          const donations = await getDonationRelatedToPost(post._id);
+          const donationsRaw = await getDonationRelatedToPost(post._id);
+          const donations = Array.isArray(donationsRaw) ? donationsRaw : [];
+
           // Sum XLM amounts and convert to INR
           const collectedXLM = donations.reduce((sum: number, donation: any) => {
             return sum + (donation.Amount || 0);
@@ -136,7 +138,12 @@ const createPost = AsyncHandler(async (req: RequestK, res: Response) => {
     console.warn('On-chain registration failed:', chainError);
   }
 
-  return res.status(200).json(new ApiResponse(200, saveData, 'Post created successfully'));
+  const responseData = { ...saveData };
+  if (responseData.ImgCid) {
+    responseData.ImgCid = await ImgFormater(responseData.ImgCid).catch(() => responseData.ImgCid);
+  }
+
+  return res.status(200).json(new ApiResponse(200, responseData, 'Post created successfully'));
 });
 
 export { createPost, getAllPost };

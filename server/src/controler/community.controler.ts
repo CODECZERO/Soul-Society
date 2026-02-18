@@ -16,6 +16,7 @@ import {
     getCommunityDetails,
 } from '../dbQueries/community.Queries.js';
 import { escrowService } from '../services/stellar/escrow.service.js';
+import { ImgFormater } from '../util/ipfs.uitl.js';
 
 
 // ─── Community Hub ─────────────────────────────────────────────────
@@ -103,7 +104,16 @@ const getProofsByTask = AsyncHandler(async (req: Request, res: Response) => {
     if (!taskId) throw new ApiError(400, 'Task ID is required');
 
     const proofs = await getTaskProofs(taskId);
-    return res.status(200).json(new ApiResponse(200, proofs, 'Proofs retrieved'));
+
+    // Format image URLs for each proof
+    const formattedProofs = await Promise.all(
+        proofs.map(async (proof: any) => ({
+            ...proof,
+            proofUrl: proof.proofCid ? await ImgFormater(proof.proofCid).catch(() => '') : ''
+        }))
+    );
+
+    return res.status(200).json(new ApiResponse(200, formattedProofs, 'Proofs retrieved'));
 });
 
 // ─── Vote on Proof ─────────────────────────────────────────────────
