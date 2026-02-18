@@ -1,12 +1,9 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Use process.cwd() so this file compiles under Jest (no import.meta). Server runs from server/ so public is cwd/public.
+const UPLOAD_ROOT = process.cwd();
 
 // A function to ensure that the folder exists
 const ensureFolder = async (filePath: string) => {
@@ -26,7 +23,7 @@ const storage = multer.diskStorage({
   destination: async function (req, file, cb) {
     try {
       // Resolve path relative to server root (two levels up from src/midelware)
-      const folderExistPath = path.resolve(__dirname, '../../public');
+      const folderExistPath = path.resolve(UPLOAD_ROOT, 'public');
       console.log('📁 Upload destination path:', folderExistPath);
       await ensureFolder(folderExistPath);
       cb(null, folderExistPath);
