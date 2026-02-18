@@ -75,6 +75,14 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Test-only: delay endpoint for server-close / in-flight tests (no response loss under load)
+if (process.env.NODE_ENV === 'test') {
+  app.get('/api/test/delay', (req, res) => {
+    const ms = Math.min(parseInt(String(req.query.ms), 10) || 50, 500);
+    setTimeout(() => res.json({ success: true, delayed: ms }), ms);
+  });
+}
+
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   logger.error('Unhandled error', { message: err.message, stack: err.stack, url: req.originalUrl, method: req.method });
