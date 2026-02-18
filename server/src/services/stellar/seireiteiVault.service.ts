@@ -253,6 +253,317 @@ export class SeireiteiVaultService {
             throw new Error(`[VAULT] Decompression failed for ${collection}:${id}: ${e}`);
         }
     }
+
+    /**
+     * Get chunk metadata without retrieving data.
+     */
+    async getMeta(collection: string, id: string) {
+        if (!this.isContractValid()) {
+            return null;
+        }
+
+        const contract = new Contract(VAULT_CONTRACT_ID);
+        const sourceAccount = await this.server.getAccount(this.adminKeypair.publicKey());
+
+        const tx = new TransactionBuilder(sourceAccount, {
+            fee: "100",
+            networkPassphrase: Networks.TESTNET
+        })
+            .addOperation(contract.call(
+                'get_meta',
+                nativeToScVal(collection, { type: 'string' }),
+                nativeToScVal(id, { type: 'string' })
+            ))
+            .setTimeout(30)
+            .build();
+
+        const simulation = await this.server.simulateTransaction(tx);
+        const simAny = simulation as any;
+
+        if (simAny.error) {
+            return null;
+        }
+
+        const resultXdr = simAny.results?.[0]?.xdr;
+        if (resultXdr) {
+            const scVal = xdr.ScVal.fromXDR(resultXdr, 'base64');
+            return scValToNative(scVal);
+        }
+        return null;
+    }
+
+    /**
+     * Get all delta patches for an entry.
+     */
+    async getDeltas(collection: string, id: string) {
+        if (!this.isContractValid()) {
+            return [];
+        }
+
+        const contract = new Contract(VAULT_CONTRACT_ID);
+        const sourceAccount = await this.server.getAccount(this.adminKeypair.publicKey());
+
+        const tx = new TransactionBuilder(sourceAccount, {
+            fee: "100",
+            networkPassphrase: Networks.TESTNET
+        })
+            .addOperation(contract.call(
+                'get_deltas',
+                nativeToScVal(collection, { type: 'string' }),
+                nativeToScVal(id, { type: 'string' })
+            ))
+            .setTimeout(30)
+            .build();
+
+        const simulation = await this.server.simulateTransaction(tx);
+        const simAny = simulation as any;
+
+        if (simAny.error) {
+            return [];
+        }
+
+        const resultXdr = simAny.results?.[0]?.xdr;
+        if (resultXdr) {
+            const scVal = xdr.ScVal.fromXDR(resultXdr, 'base64');
+            return scValToNative(scVal);
+        }
+        return [];
+    }
+
+    /**
+     * Check existence using Bloom filter (fast O(1) negative lookup).
+     */
+    async bloomCheck(collection: string, id: string): Promise<boolean> {
+        if (!this.isContractValid()) {
+            return false;
+        }
+
+        const contract = new Contract(VAULT_CONTRACT_ID);
+        const sourceAccount = await this.server.getAccount(this.adminKeypair.publicKey());
+
+        const tx = new TransactionBuilder(sourceAccount, {
+            fee: "100",
+            networkPassphrase: Networks.TESTNET
+        })
+            .addOperation(contract.call(
+                'bloom_check',
+                nativeToScVal(collection, { type: 'string' }),
+                nativeToScVal(id, { type: 'string' })
+            ))
+            .setTimeout(30)
+            .build();
+
+        const simulation = await this.server.simulateTransaction(tx);
+        const simAny = simulation as any;
+
+        if (simAny.error) {
+            return false;
+        }
+
+        const resultXdr = simAny.results?.[0]?.xdr;
+        if (resultXdr) {
+            const scVal = xdr.ScVal.fromXDR(resultXdr, 'base64');
+            return scValToNative(scVal) as boolean;
+        }
+        return false;
+    }
+
+    /**
+     * Definitive existence check (reads storage).
+     */
+    async has(collection: string, id: string): Promise<boolean> {
+        if (!this.isContractValid()) {
+            return false;
+        }
+
+        const contract = new Contract(VAULT_CONTRACT_ID);
+        const sourceAccount = await this.server.getAccount(this.adminKeypair.publicKey());
+
+        const tx = new TransactionBuilder(sourceAccount, {
+            fee: "100",
+            networkPassphrase: Networks.TESTNET
+        })
+            .addOperation(contract.call(
+                'has',
+                nativeToScVal(collection, { type: 'string' }),
+                nativeToScVal(id, { type: 'string' })
+            ))
+            .setTimeout(30)
+            .build();
+
+        const simulation = await this.server.simulateTransaction(tx);
+        const simAny = simulation as any;
+
+        if (simAny.error) {
+            return false;
+        }
+
+        const resultXdr = simAny.results?.[0]?.xdr;
+        if (resultXdr) {
+            const scVal = xdr.ScVal.fromXDR(resultXdr, 'base64');
+            return scValToNative(scVal) as boolean;
+        }
+        return false;
+    }
+
+    /**
+     * Get the full index for a collection.
+     */
+    async getIndex(collection: string) {
+        if (!this.isContractValid()) {
+            return [];
+        }
+
+        const contract = new Contract(VAULT_CONTRACT_ID);
+        const sourceAccount = await this.server.getAccount(this.adminKeypair.publicKey());
+
+        const tx = new TransactionBuilder(sourceAccount, {
+            fee: "100",
+            networkPassphrase: Networks.TESTNET
+        })
+            .addOperation(contract.call(
+                'get_index',
+                nativeToScVal(collection, { type: 'string' })
+            ))
+            .setTimeout(30)
+            .build();
+
+        const simulation = await this.server.simulateTransaction(tx);
+        const simAny = simulation as any;
+
+        if (simAny.error) {
+            return [];
+        }
+
+        const resultXdr = simAny.results?.[0]?.xdr;
+        if (resultXdr) {
+            const scVal = xdr.ScVal.fromXDR(resultXdr, 'base64');
+            return scValToNative(scVal);
+        }
+        return [];
+    }
+
+    /**
+     * Get storage utilization statistics.
+     */
+    async getStats() {
+        if (!this.isContractValid()) {
+            return {
+                total_entries: 0,
+                hot_entries: 0,
+                cold_entries: 0,
+                total_bytes_stored: 0,
+                total_bytes_original: 0,
+                compression_ratio: 0,
+                bloom_false_positive_rate: 8
+            };
+        }
+
+        const contract = new Contract(VAULT_CONTRACT_ID);
+        const sourceAccount = await this.server.getAccount(this.adminKeypair.publicKey());
+
+        const tx = new TransactionBuilder(sourceAccount, {
+            fee: "100",
+            networkPassphrase: Networks.TESTNET
+        })
+            .addOperation(contract.call('get_stats'))
+            .setTimeout(30)
+            .build();
+
+        const simulation = await this.server.simulateTransaction(tx);
+        const simAny = simulation as any;
+
+        if (simAny.error) {
+            return {
+                total_entries: 0,
+                hot_entries: 0,
+                cold_entries: 0,
+                total_bytes_stored: 0,
+                total_bytes_original: 0,
+                compression_ratio: 0,
+                bloom_false_positive_rate: 8
+            };
+        }
+
+        const resultXdr = simAny.results?.[0]?.xdr;
+        if (resultXdr) {
+            const scVal = xdr.ScVal.fromXDR(resultXdr, 'base64');
+            return scValToNative(scVal);
+        }
+        return {
+            total_entries: 0,
+            hot_entries: 0,
+            cold_entries: 0,
+            total_bytes_stored: 0,
+            total_bytes_original: 0,
+            compression_ratio: 0,
+            bloom_false_positive_rate: 8
+        };
+    }
+
+    /**
+     * Migrate an entry from Hot → Cold zone.
+     */
+    async migrateToCold(collection: string, id: string) {
+        if (!this.isContractValid()) {
+            logger.warn(`[VAULT] Skipping migration: Invalid or missing Contract ID`);
+            return;
+        }
+
+        const contract = new Contract(VAULT_CONTRACT_ID);
+        const sourceAccount = await this.server.getAccount(this.adminKeypair.publicKey());
+
+        const tx = new TransactionBuilder(sourceAccount, {
+            fee: "100",
+            networkPassphrase: Networks.TESTNET
+        })
+            .addOperation(contract.call(
+                'migrate_to_cold',
+                nativeToScVal(collection, { type: 'string' }),
+                nativeToScVal(id, { type: 'string' })
+            ))
+            .setTimeout(30)
+            .build();
+
+        const preparedTx = await this.server.prepareTransaction(tx);
+        preparedTx.sign(this.adminKeypair);
+        const result = await this.server.sendTransaction(preparedTx);
+
+        logger.info(`[VAULT] Migrated ${collection}:${id} to cold storage - ${result.hash}`);
+        return result;
+    }
+
+    /**
+     * Delete an entry.
+     */
+    async delete(collection: string, id: string) {
+        if (!this.isContractValid()) {
+            logger.warn(`[VAULT] Skipping deletion: Invalid or missing Contract ID`);
+            return;
+        }
+
+        const contract = new Contract(VAULT_CONTRACT_ID);
+        const sourceAccount = await this.server.getAccount(this.adminKeypair.publicKey());
+
+        const tx = new TransactionBuilder(sourceAccount, {
+            fee: "100",
+            networkPassphrase: Networks.TESTNET
+        })
+            .addOperation(contract.call(
+                'delete',
+                nativeToScVal(collection, { type: 'string' }),
+                nativeToScVal(id, { type: 'string' })
+            ))
+            .setTimeout(30)
+            .build();
+
+        const preparedTx = await this.server.prepareTransaction(tx);
+        preparedTx.sign(this.adminKeypair);
+        const result = await this.server.sendTransaction(preparedTx);
+
+        logger.info(`[VAULT] Deleted ${collection}:${id} - ${result.hash}`);
+        return result;
+    }
 }
 
 export const seireiteiVault = new SeireiteiVaultService();
