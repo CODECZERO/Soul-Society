@@ -76,27 +76,27 @@ export default function Home() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-zinc-950 border-b border-zinc-800/50 py-28 px-4">
+      <section className="relative overflow-hidden bg-zinc-950 border-b border-zinc-800/50 py-12 sm:py-20 md:py-28 px-4">
         {/* Subtle gradient background */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-amber-950/5 to-transparent pointer-events-none" />
         <div className="absolute top-10 left-10 w-72 h-72 bg-amber-500/5 blur-[80px] rounded-full pointer-events-none" />
 
         <div className="mx-auto max-w-6xl relative z-10">
           <div className="text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-800 text-amber-400 text-[10px] font-semibold uppercase tracking-[0.3em] mb-8 rounded-md">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-800 text-amber-400 text-[10px] font-semibold uppercase tracking-[0.3em] mb-6 sm:mb-8 rounded-md">
               <Activity className="h-3 w-3 animate-pulse" />
               Platform Active — Stellar Testnet
             </div>
 
-            <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 tracking-tight leading-[1.05] max-w-4xl">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 tracking-tight leading-[1.1] max-w-4xl">
               Transparent <span className="text-amber-400">Donations</span> on the Blockchain
             </h1>
 
-            <p className="text-xl text-zinc-400 mb-8 max-w-2xl font-medium tracking-tight">
+            <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-6 sm:mb-8 max-w-2xl font-medium tracking-tight">
               Multi-wallet integration, Soroban smart contracts, and real-time tracking. Every donation verifiable on-chain.
             </p>
 
-            <div className="flex gap-4 flex-wrap">
+            <div className="flex gap-3 sm:gap-4 flex-wrap">
               <Link href="/explore">
                 <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-lg px-8 h-13">
                   <span className="flex items-center gap-2">
@@ -120,18 +120,18 @@ export default function Home() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px mt-20 bg-zinc-800 rounded-lg overflow-hidden">
-            <div className="bg-zinc-900 p-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px mt-12 sm:mt-20 bg-zinc-800 rounded-lg overflow-hidden">
+            <div className="bg-zinc-900 p-5 sm:p-8">
               <div className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest mb-1">Active Donors</div>
-              <div className="text-4xl font-bold text-white tracking-tight">{stats.activeDonors.toLocaleString() || '0'}<span className="text-amber-400">+</span></div>
+              <div className="text-3xl sm:text-4xl font-bold text-white tracking-tight">{stats.activeDonors.toLocaleString() || '0'}<span className="text-amber-400">+</span></div>
             </div>
-            <div className="bg-zinc-900 p-8">
+            <div className="bg-zinc-900 p-5 sm:p-8">
               <div className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest mb-1">Verified NGOs</div>
-              <div className="text-4xl font-bold text-white tracking-tight">{stats.verifiedNGOs.toLocaleString() || '0'}</div>
+              <div className="text-3xl sm:text-4xl font-bold text-white tracking-tight">{stats.verifiedNGOs.toLocaleString() || '0'}</div>
             </div>
-            <div className="bg-zinc-900 p-8">
+            <div className="bg-zinc-900 p-5 sm:p-8">
               <div className="text-zinc-500 text-[10px] font-semibold uppercase tracking-widest mb-1">On-Chain Verified</div>
-              <div className="text-4xl font-bold text-white tracking-tight">100<span className="text-amber-400">%</span></div>
+              <div className="text-3xl sm:text-4xl font-bold text-white tracking-tight">100<span className="text-amber-400">%</span></div>
             </div>
           </div>
         </div>
@@ -182,7 +182,7 @@ export default function Home() {
           ) : null}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {posts.map((post) => (
-              <TaskCard key={post._id} task={convertPostToTask(post)} />
+              <TaskCard key={post._id} task={convertPostToTask(post as any)} />
             ))}
           </div>
           {posts.length === 0 && !isLoading && (
