@@ -13,9 +13,9 @@ export function useAccount() {
   useEffect(() => {
     const fetchAccount = async () => {
       try {
-        const freighterApi = await import("@stellar/freighter-api")
+        const freighterApi = await import("@stellar/freighter-api") as any
         if (await freighterApi.isConnected()) {
-          const userInfo = await freighterApi.getUserInfo()
+          const userInfo = await freighterApi.getUserInfo?.()
           if (userInfo?.publicKey) {
             setAccount({
               address: userInfo.publicKey,
@@ -23,8 +23,9 @@ export function useAccount() {
             })
           }
         }
-      } catch (error) {
-        } finally {
+      } catch {
+        // ignore
+      } finally {
         setIsLoading(false)
       }
     }
