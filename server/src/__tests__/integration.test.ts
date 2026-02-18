@@ -5,7 +5,7 @@
  * DB connection is skipped in test mode; blockchain calls use real vault
  * service when available, or gracefully handle errors.
  */
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 
@@ -22,6 +22,8 @@ process.env.PINATA_JWT = 'test_jwt';
 process.env.PINATA_GATEWAY = 'gateway.pinata.cloud';
 process.env.STACK_ADMIN_SECRET = 'SC4AI3NPZLJKUF2K5HSCJNTD6RRYY3HFP3YC5EYWW5XBDJ3AIFSPC5CS'; // Valid testnet key
 
+jest.mock('nanoid', () => ({ nanoid: () => 'test-id-integration' }));
+jest.mock('multiformats');
 
 // Dynamic import after env setup (ESM compat)
 let app: any;
@@ -130,12 +132,13 @@ describe('Stellar Transaction API', () => {
         }
     }, 15000); // 15s timeout for network call
 
-    it('GET /api/stellar/transactions/invalid → handles invalid key gracefully', async () => {
+    it('GET /api/stellar/transactions/invalid → returns 400 for invalid account ID', async () => {
         const res = await request(app)
             .get('/api/stellar/transactions/INVALID_KEY_HERE');
-        // Should return 200 with empty data or 500 with error
-        expect([200, 500]).toContain(res.status);
-    }, 10000);
+        expect(res.status).toBe(400);
+        expect(res.body.success).toBe(false);
+        expect(res.body.message).toMatch(/Invalid account ID|must start with G/i);
+    });
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -145,23 +148,24 @@ describe('Stellar Transaction API', () => {
 describe('Post API', () => {
     const token = generateTestToken();
 
-    it('GET /api/posts/get-all-post → returns array', async () => {
+    it('GET /api/posts → returns array', async () => {
         const res = await request(app)
-            .get('/api/posts/get-all-post') // Fix path: /api/posts/...
+            .get('/api/posts')
             .set('Cookie', `accessToken=${token}`);
-        // 200 with array data, or error from vault
         if (res.status === 200) {
-            expect(Array.isArray(res.body.data)).toBe(true);
+            expect(Array.isArray(res.body.data ?? res.body)).toBe(true);
         }
+        expect([200, 401, 500]).toContain(res.status);
     }, 15000);
 
-    it('POST /api/posts/create-post → rejects without required fields', async () => {
+    it('POST /api/posts → rejects without required fields', async () => {
         const res = await request(app)
-            .post('/api/posts/create-post') // Fix path
+            .post('/api/posts')
             .set('Cookie', `accessToken=${token}`)
+            .set('Content-Type', 'application/json')
             .send({});
-        // Should fail validation (400 or 500) or Auth? No, token provided.
         expect(res.status).not.toBe(200);
+        expect([400, 401, 422, 500]).toContain(res.status);
     });
 });
 // ... 
@@ -176,9 +180,68 @@ describe('Post API', () => {
 describe('Error Handling', () => {
     it('rejects malformed JSON → 400', async () => {
         const res = await request(app)
-            .post('/api/user/login') // Use valid route
+            .post('/api/user/login')
             .set('Content-Type', 'application/json')
             .send('{invalid json');
         expect(res.status).toBe(400);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  API HEALTH & ROUTES
+// ═══════════════════════════════════════════════════════════════════
+
+describe('API health and routes', () => {
+    it('GET /api/health → 200 with AidBridge message', async () => {
+        const res = await request(app).get('/api/health');
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toMatch(/running|AidBridge/i);
+    });
+
+    it('GET /api/community/all → returns array', async () => {
+        const res = await request(app).get('/api/community/all');
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it('GET /api/stats → returns 200 or 404/500', async () => {
+        const res = await request(app).get('/api/stats');
+        expect([200, 404, 500]).toContain(res.status);
+        if (res.status === 200) expect(res.body).toHaveProperty('success');
+    });
+
+    it('GET /api/community/leaderboard → returns array', async () => {
+        const res = await request(app).get('/api/community/leaderboard');
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it('POST /api/user/login without body → 400 or 401', async () => {
+        const res = await request(app).post('/api/user/login').set('Content-Type', 'application/json').send({});
+        expect([400, 401, 422]).toContain(res.status);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  CONTRACT ROUTES (validation / 400)
+// ═══════════════════════════════════════════════════════════════════
+
+describe('Contract routes validation', () => {
+    it('POST /api/contracts/notifications/send/xdr → 400 without body', async () => {
+        const res = await request(app).post('/api/contracts/notifications/send/xdr').send({});
+        expect(res.status).toBe(400);
+    });
+
+    it('POST /api/contracts/escrow/create-escrow/xdr → 400 without required fields', async () => {
+        const res = await request(app).post('/api/contracts/escrow/create-escrow/xdr').send({});
+        expect(res.status).toBe(400);
+    });
+
+    it('GET /api/contracts/notifications/count → 200 or 500', async () => {
+        const res = await request(app).get('/api/contracts/notifications/count');
+        expect([200, 500]).toContain(res.status);
     });
 });
