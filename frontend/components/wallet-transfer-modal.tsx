@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { CheckCircle2, Loader2, AlertCircle, Wallet, ArrowRight } from "lucide-react"
-import { paymentApi } from "@/lib/api-client"
+import apiService from "@/lib/api-service"
 import { useWallet } from "@/lib/wallet-context"
 import { getExchangeRate, convertRsToXlm } from "@/lib/exchange-rates"
 
@@ -84,17 +84,12 @@ export function WalletTransferModal({ isOpen, onClose, task }: WalletTransferMod
     setError("")
 
     try {
-      ,
-        senderPublicKey: publicKey,
-        ipfsCid
-      })
-
       // Generate a mock IPFS CID for the transaction metadata
       const mockCid = `Qm${Date.now()}${Math.random().toString(36).substr(2, 9)}`
       setIpfsCid(mockCid)
 
       // Call wallet-to-wallet payment API
-      const walletPayResponse = await paymentApi.walletPay({
+      const walletPayResponse = await apiService.walletPay({
         PublicKey: receiverAddress,
         PostId: taskId,
         Amount: Number.parseFloat(amount),
@@ -113,7 +108,7 @@ export function WalletTransferModal({ isOpen, onClose, task }: WalletTransferMod
       const message = err instanceof Error ? err.message : "Wallet transfer failed"
       setError(message)
       setStep("error")
-      } finally {
+    } finally {
       setIsProcessing(false)
     }
   }
