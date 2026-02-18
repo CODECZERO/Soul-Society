@@ -54,23 +54,29 @@ jobs:
         run: npm test
         env:
           CI: true
-          # Secrets (Hardcoded for immediate CI success as requested - WARNING: EXPOSED IN REPO)
+          # Secrets (test-only; replace with secrets in production)
           STACK_ADMIN_SECRET: SC4AI3NPZLJKUF2K5HSCJNTD6RRYY3HFP3YC5EYWW5XBDJ3AIFSPC5CS
           PINATA_JWT: mock_jwt_for_internal_testing
           ATS: soul_society_access_secret_12345
           RTS: soul_society_refresh_secret_67890
-          # Public Config (from server/.env)
+          # Server config
           PORT: 8080
-          MONGODB_URI: mongodb://localhost:27017/soul-society 
+          MONGODB_URI: mongodb://localhost:27017/soul-society
           FRONTEND_URL: http://localhost:3000
           BLOCKCHAIN_NETWORK: https://horizon-testnet.stellar.org
           SOROBAN_RPC_URL: https://soroban-testnet.stellar.org
           PINATA_GATEWAY: gateway.pinata.cloud
-          NODE_ENV: test 
+          NODE_ENV: test
+          # Contract IDs for tests (from ./deploy_contract.sh; update after deploying to testnet)
           CONTRACT_ID: CAECJ2FR5ARC3264I66GLWW5U6PEBYPGUKKI6FBRWSCYGCXDRO4ZJBPA
           VAULT_CONTRACT_ID: CAECJ2FR5ARC3264I66GLWW5U6PEBYPGUKKI6FBRWSCYGCXDRO4ZJBPA
           MISSION_REGISTRY_CONTRACT_ID: CAR65QGGO267T4AD6O47TYWQKU5JTIP5RA2QO5NRYP763CJEYG2G3SNP
           ESCROW_CONTRACT_ID: CCKS3RKLA34FYHBHYL5WHLKJWX5FRHHNJBGMPBAPWSXPRSB2OEAEDXGE
+          REIATSU_TOKEN_CONTRACT_ID: CAECJ2FR5ARC3264I66GLWW5U6PEBYPGUKKI6FBRWSCYGCXDRO4ZJBPA
+          SOUL_BADGE_CONTRACT_ID: CC76VNFKSTN5KOR7LHTCDI4QW44V5F5B5N5E5P5S5W5S5X5C5H5U5P5U
+          TREASURY_CONTRACT_ID: CAECJ2FR5ARC3264I66GLWW5U6PEBYPGUKKI6FBRWSCYGCXDRO4ZJBPA
+          SOUL_REAPER_REGISTRY_CONTRACT_ID: CAR65QGGO267T4AD6O47TYWQKU5JTIP5RA2QO5NRYP763CJEYG2G3SNP
+          NOTIFICATIONS_CONTRACT_ID: CAECJ2FR5ARC3264I66GLWW5U6PEBYPGUKKI6FBRWSCYGCXDRO4ZJBPA
 
   frontend:
     name: Frontend (Playwright)
