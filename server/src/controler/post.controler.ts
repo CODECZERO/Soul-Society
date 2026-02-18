@@ -49,7 +49,7 @@ const getAllPost = AsyncHandler(async (req: Request, res: Response) => {
           const donations = Array.isArray(donationsRaw) ? donationsRaw : [];
 
           // Sum XLM amounts and convert to INR
-          const collectedXLM = donations.reduce((sum: number, donation: any) => {
+          const collectedXLM = (Array.isArray(donations) ? donations : []).reduce((sum: number, donation: any) => {
             return sum + (donation.Amount || 0);
           }, 0);
           const collectedINR = collectedXLM * XLM_TO_INR_RATE;

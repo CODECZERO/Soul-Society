@@ -43,8 +43,8 @@ export class EscrowService {
                 'create_escrow',
                 new Address(donorPublicKey).toScVal(),
                 new Address(ngoPublicKey).toScVal(),
-                nativeToScVal(BigInt(totalAmount), { type: 'i128' }),
-                nativeToScVal(BigInt(lockedAmount), { type: 'i128' }),
+                nativeToScVal(BigInt(Math.round(totalAmount)), { type: 'i128' }),
+                nativeToScVal(BigInt(Math.round(lockedAmount)), { type: 'i128' }),
                 nativeToScVal(taskId, { type: 'string' }),
                 nativeToScVal(BigInt(deadline), { type: 'u64' })
             ))

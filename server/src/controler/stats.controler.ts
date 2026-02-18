@@ -15,7 +15,7 @@ const getStats = AsyncHandler(async (req: Request, res: Response) => {
 
     const XLM_TO_INR_RATE = await getXLMtoINRRate();
 
-    const totalRaisedXLM = donations.reduce((sum, donation) => {
+    const totalRaisedXLM = (Array.isArray(donations) ? donations : []).reduce((sum, donation) => {
       return sum + (donation.Amount || 0);
     }, 0);
     const totalRaisedINR = Math.round(totalRaisedXLM * XLM_TO_INR_RATE);

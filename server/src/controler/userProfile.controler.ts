@@ -13,7 +13,8 @@ const getUserProfile = AsyncHandler(async (req: Request, res: Response) => {
   }
 
   // 1. Get total donations (Spiritual Power)
-  const donations = await getDonationsByDonor(walletAddr);
+  const donationsRaw = await getDonationsByDonor(walletAddr);
+  const donations = Array.isArray(donationsRaw) ? donationsRaw : [];
   const totalReiatsu = donations.reduce((acc: number, curr: any) => acc + curr.Amount, 0);
 
   // 2. Get mission proofs (Missions Completed)
