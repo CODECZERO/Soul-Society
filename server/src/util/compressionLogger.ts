@@ -1,10 +1,7 @@
 import winston from 'winston';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const LOG_DIR = path.join(__dirname, '../../logs');
+const LOG_DIR = path.join(process.cwd(), 'logs');
 
 /**
  * Dedicated logger for data compression metrics.
