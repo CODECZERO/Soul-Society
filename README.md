@@ -140,14 +140,90 @@ npm run dev
 
 ---
 
-## 🏆 Stellar Journey to Mastery
-**Current Status: Green Belt (Level 4) Completed** ✅
+## 🏆 Stellar Journey to Mastery — Level-wise Checklist
 
-- [x] **Contracts**: Inter-contract calls (Escrow ↔ Token ↔ Badge)
-- [x] **Tokens**: Custom Reiatsu Token (RA) with staking & vesting
-- [x] **Real-time**: Advanced event streaming (Seireitei Alert System)
-- [x] **DevOps**: Full CI/CD pipeline with GitHub Actions
-- [x] **Design**: Mobile responsive "Bleach" aesthetic
+### Level 2 — White Belt (Multi-wallet, Contract, Real-time)
+
+**Focus:** StellarWalletsKit, error handling, contract deployment, frontend contract calls, transaction status.
+
+| Requirement | Status |
+|-------------|--------|
+| 3 error types handled (wallet not found, rejected, insufficient balance) | [x] Done — see `frontend/lib/redux/slices/wallet-slice.ts` |
+| Contract deployed on testnet | [x] Done — run `./deploy_contract.sh`; addresses in `server/.env` |
+| Contract called from the frontend | [x] Done — Escrow XDR flow in `donate-modal`, `simple-donate-modal`, `stellar-utils.ts` |
+| Transaction status visible | [x] Done — success/error steps + tx hash + Stellar Explorer link in donate modals |
+| Minimum 2+ meaningful commits | [x] Done |
+
+**Deliverable:** Multi-wallet app with deployed contract and real-time event integration — [x] Done
+
+**Submission (optional):**
+- [ ] Live demo link (Vercel/Netlify)
+- [ ] Screenshot: wallet options available
+- [ ] Deployed contract address (see **Deployed contract addresses** below)
+- [ ] Transaction hash of a contract call (verifiable on [Stellar Explorer](https://stellar.expert))
+
+---
+
+### Level 3 — Orange Belt (Mini-dApp, Tests, Docs, Demo)
+
+**Focus:** Loading states, caching, tests, README, demo video.
+
+| Requirement | Status |
+|-------------|--------|
+| Mini-dApp fully functional | [x] Done |
+| Minimum 3 tests passing | [x] Done — Server: 38 Jest tests; Smart contracts: 54 `cargo test`; Frontend: Playwright e2e |
+| README complete | [x] Done — setup, architecture, level checklists |
+| Demo video recorded | [ ] Optional — 1-minute demo link in README when ready |
+| Minimum 3+ meaningful commits | [x] Done |
+
+**Deliverable:** Complete mini-dApp with documentation and tests — [x] Done
+
+**Submission (optional):**
+- [ ] Live demo link (Vercel/Netlify)
+- [ ] Screenshot: test output showing 3+ tests passing
+- [ ] Demo video link (1-minute) showing full functionality
+
+---
+
+### Level 4 — Green Belt (Production-ready)
+
+**Focus:** Inter-contract calls, custom token/pool, CI/CD, mobile responsive.
+
+| Requirement | Status |
+|-------------|--------|
+| Inter-contract call working | [x] Done — Escrow ↔ Reiatsu Token ↔ Soul Badge (release/vote flows) |
+| Custom token or pool deployed | [x] Done — Reiatsu Token (RA) with staking & vesting |
+| CI/CD running | [x] Done — GitHub Actions: smart contracts, server, frontend (Playwright) |
+| Mobile responsive | [x] Done — responsive header, breakpoints, touch-friendly UI |
+| Minimum 8+ meaningful commits | [x] Done |
+
+**Deliverable:** Production-ready advanced contract implementation — [x] Done
+
+**Submission (optional):**
+- [ ] Live demo link (Vercel/Netlify)
+- [ ] Screenshot: mobile responsive view
+- [ ] Screenshot or badge: CI/CD pipeline running
+- [ ] Contract addresses and transaction hash (see below)
+- [ ] Token or pool address (Reiatsu Token — see below)
+
+---
+
+### Deployed contract addresses (Testnet)
+
+After running `./deploy_contract.sh`, contract IDs are written to `server/.env`. Example (replace with your deployed IDs):
+
+| Contract | Env variable | Example (yours may differ) |
+|----------|--------------|-----------------------------|
+| Vault | `VAULT_CONTRACT_ID` / `CONTRACT_ID` | `CBF4NN26...` |
+| Mission Registry | `MISSION_REGISTRY_CONTRACT_ID` | `CCPFZ5HP...` |
+| Escrow | `ESCROW_CONTRACT_ID` | `CBFDAJVK...` |
+| Reiatsu Token | `REIATSU_TOKEN_CONTRACT_ID` | `CAXTMBCD...` |
+| Soul Badge | `SOUL_BADGE_CONTRACT_ID` | `CASWXMK5...` |
+| Treasury | `TREASURY_CONTRACT_ID` | `CAUGPMZ6...` |
+| Soul Reaper Registry | `SOUL_REAPER_REGISTRY_CONTRACT_ID` | `CCRRDYK6...` |
+| Notifications | `NOTIFICATIONS_CONTRACT_ID` | `CC5ZG73H...` |
+
+**Transaction hash:** After a donation or contract call, the UI shows a success step with a link to `https://stellar.expert/explorer/testnet/tx/<hash>`.
 
 ---
 
