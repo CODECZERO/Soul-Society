@@ -1,5 +1,6 @@
 import { Horizon } from '@stellar/stellar-sdk';
 import dotenv from 'dotenv';
+import logger from '../../util/logger.js';
 dotenv.config();
 
 const HORIZON_URL = process.env.BLOCKCHAIN_NETWORK || 'https://horizon-testnet.stellar.org';
@@ -51,7 +52,11 @@ export async function getTransactionHistory(
         if (error?.response?.status === 404) {
             return []; // Account not found or has no transactions
         }
-        console.error('Error fetching transaction history:', error);
+        if (error?.response?.status === 400) {
+            logger.warn('Horizon bad request for transaction history', { detail: error?.response?.detail, extras: error?.response?.extras });
+            return []; // Invalid request, return empty rather than 500
+        }
+        logger.error('Error fetching transaction history', { message: error?.message });
         throw error;
     }
 }
@@ -73,8 +78,8 @@ export async function getTransactionOperations(txHash: string): Promise<any[]> {
             created_at: op.created_at,
             ...op,
         }));
-    } catch (error) {
-        console.error('Error fetching transaction operations:', error);
+    } catch (error: any) {
+        logger.error('Error fetching transaction operations', { message: error?.message });
         throw error;
     }
 }
