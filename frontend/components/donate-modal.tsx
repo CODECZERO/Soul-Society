@@ -261,7 +261,7 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
               <p className="font-semibold text-foreground">{task.title}</p>
             </div>
 
-            <Button onClick={handleConfirm} disabled={isDonating} className="w-full bg-primary hover:bg-primary/90">
+            <Button onClick={handleConfirm} disabled={isDonating} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold">
               {isDonating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -333,7 +333,7 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
             )}
 
             <div className="space-y-2">
-              <Button onClick={handleClose} className="w-full bg-primary hover:bg-primary/90">
+              <Button onClick={handleClose} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold">
                 Done
               </Button>
             </div>
@@ -351,10 +351,10 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
             </div>
 
             <div className="space-y-2">
-              <Button onClick={() => setStep("confirm")} className="w-full bg-primary hover:bg-primary/90">
+              <Button onClick={() => setStep("confirm")} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold">
                 Try Again
               </Button>
-              <Button onClick={handleClose} variant="outline" className="w-full bg-transparent">
+              <Button onClick={handleClose} variant="outline" className="w-full border-zinc-300 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900">
                 Cancel
               </Button>
             </div>

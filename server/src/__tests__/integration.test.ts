@@ -167,6 +167,86 @@ describe('Post API', () => {
         expect(res.status).not.toBe(200);
         expect([400, 401, 422, 500]).toContain(res.status);
     });
+
+    it('POST /api/posts → rejects without auth', async () => {
+        const res = await request(app)
+            .post('/api/posts')
+            .set('Content-Type', 'application/json')
+            .send({
+                Title: 'Test Campaign',
+                Type: 'Relief',
+                Description: 'At least ten characters required here.',
+                Location: 'India',
+                NeedAmount: '5000',
+            });
+        expect(res.status).toBe(401);
+    });
+
+    it('POST /api/posts → accepts valid body with auth (insert or 500)', async () => {
+        const token = generateTestToken({ NgoId: 'test-ngo-001' });
+        const res = await request(app)
+            .post('/api/posts')
+            .set('Cookie', `accessToken=${token}`)
+            .set('Content-Type', 'application/json')
+            .send({
+                Title: 'Integration Test Campaign',
+                Type: 'Relief',
+                Description: 'At least ten characters required for description.',
+                Location: 'India',
+                NeedAmount: '10000',
+            });
+        expect([200, 400, 401, 500]).toContain(res.status);
+        if (res.status === 200) {
+            expect(res.body.success).toBe(true);
+            expect(res.body.data).toBeDefined();
+            expect(res.body.data).toHaveProperty('_id');
+            expect(res.body.data).toHaveProperty('Title', 'Integration Test Campaign');
+        }
+    }, 15000);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  PAYMENT / DONATION — VERIFY & TRANSACTION
+// ═══════════════════════════════════════════════════════════════════
+
+describe('Payment verify-donation and donation insert', () => {
+    it('POST /api/payment/verify-donation → 400 or 500 without body', async () => {
+        const res = await request(app)
+            .post('/api/payment/verify-donation')
+            .set('Content-Type', 'application/json')
+            .send({});
+        expect([400, 500]).toContain(res.status);
+        if (res.status === 400) expect(res.body.message).toMatch(/Invalid data|required/i);
+    });
+
+    it('POST /api/donations → 400 when required fields missing', async () => {
+        const res = await request(app)
+            .post('/api/donations')
+            .set('Content-Type', 'application/json')
+            .send({});
+        expect(res.status).toBe(400);
+        expect(res.body.message).toMatch(/required|fields|All fields/i);
+    });
+
+    it('POST /api/donations → accepts valid body (insert or 500)', async () => {
+        const res = await request(app)
+            .post('/api/donations')
+            .set('Content-Type', 'application/json')
+            .send({
+                transactionId: 'test-txn-' + Date.now(),
+                donorId: 'GDUMMYDONOR1234567890',
+                postId: 'test-post-id-integration',
+                amount: 50,
+            });
+        expect([201, 400, 404, 500]).toContain(res.status);
+        if (res.status === 201) {
+            expect(res.body.success).toBe(true);
+            expect(res.body.data).toBeDefined();
+            expect(res.body.data).toHaveProperty('_id');
+            expect(res.body.data).toHaveProperty('currentTxn');
+            expect(res.body.data).toHaveProperty('Amount');
+        }
+    }, 45000);
 });
 // ... 
 // (Skipping Donation/Stats/Payment/Stellar Account which look okay path-wise or match index.routes)

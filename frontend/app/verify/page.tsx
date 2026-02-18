@@ -129,7 +129,7 @@ export default function VerifyPage() {
                           <p className="font-mono text-sm text-foreground break-all flex-1">
                             {verificationResult.merkleLeaf}
                           </p>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200">
                             <Copy className="h-4 w-4" />
                           </Button>
                         </div>
@@ -140,7 +140,7 @@ export default function VerifyPage() {
                           <p className="font-mono text-sm text-foreground break-all flex-1">
                             {verificationResult.computedRoot}
                           </p>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200">
                             <Copy className="h-4 w-4" />
                           </Button>
                         </div>
@@ -151,7 +151,7 @@ export default function VerifyPage() {
                           <p className="font-mono text-sm text-foreground break-all flex-1">
                             {verificationResult.onChainRoot}
                           </p>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200">
                             <Copy className="h-4 w-4" />
                           </Button>
                         </div>
@@ -162,7 +162,7 @@ export default function VerifyPage() {
                           {verificationResult.merkleProof.map((proof: string, idx: number) => (
                             <div key={idx} className="flex items-center gap-2">
                               <p className="font-mono text-xs text-foreground break-all flex-1">{proof}</p>
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="sm" className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200">
                                 <Copy className="h-4 w-4" />
                               </Button>
                             </div>
@@ -181,7 +181,7 @@ export default function VerifyPage() {
                         <p className="font-mono text-sm text-foreground break-all flex-1">
                           {verificationResult.ipfsCid}
                         </p>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200">
                           <Copy className="h-4 w-4" />
                         </Button>
                       </div>
@@ -189,7 +189,7 @@ export default function VerifyPage() {
                   </Card>
 
                   {/* Download */}
-                  <Button className="w-full bg-primary hover:bg-primary/90">Download Proof JSON</Button>
+                  <Button className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold">Download Proof JSON</Button>
                 </>
               )}
             </div>

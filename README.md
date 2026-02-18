@@ -17,6 +17,7 @@
 
 Detailed documentation has been moved to the `docs/` directory:
 
+- [🔧 Environment Setup (Frontend & Server)](docs/ENV_SETUP.md)
 - [📚 API Documentation](docs/API_DOCUMENTATION.md)
 - [🧩 Smart Contracts](docs/SMART_CONTRACT_README.md)
 - [💰 Payment Flow Guide](docs/PAYMENT_FLOW_GUIDE.md)
@@ -118,10 +119,14 @@ This starts:
 
 ### Manual Setup
 
+#### 0. Environment variables
+- **Server:** Copy `server/.env.example` to `server/.env` and fill in secrets (JWT, Pinata, Stellar). After deploying contracts, run `./deploy_contract.sh` to write contract IDs into `server/.env`.
+- **Frontend:** Copy `frontend/.env.example` to `frontend/.env.local`. Set `NEXT_PUBLIC_API_URL` to your API URL (e.g. `http://localhost:8000/api` for local dev). See [Environment Setup](docs/ENV_SETUP.md) for details.
+
 #### 1. Smart Contracts
 ```bash
 cd smartContract
-cargo test  # Verify all 42 tests pass
+cargo test  # Verify all tests pass
 ```
 
 #### 2. Server

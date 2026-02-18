@@ -38,13 +38,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       }
 
       const key = await connector.connect()
-      setPublicKey(typeof key === 'string' ? key : String(key))
+      const keyStr = typeof key === 'string' ? key : String(key)
+      setPublicKey(keyStr)
       setWalletType(selectedWalletType)
       setIsConnected(true)
 
       // Fetch balance
       const { getAccountBalance } = await import("@/lib/stellar-utils")
-      const bal = await getAccountBalance(key)
+      const bal = await getAccountBalance(keyStr)
       setBalance(bal)
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to connect wallet"
@@ -99,36 +100,4 @@ export function useWallet() {
     throw new Error("useWallet must be used within WalletProvider")
   }
   return context
-}
-
-// Type augmentation for Freighter
-declare global {
-  interface Window {
-    stellar?: {
-      requestAccess: (options: { domain: string }) => Promise<{
-        publicKey?: string
-        error?: { message: string }
-      }>
-      signTransaction: (
-        tx: string,
-        options: { networkPassphrase: string },
-      ) => Promise<{
-        signedXDR?: string
-        error?: { message: string }
-      }>
-    }
-    freighter?: {
-      requestAccess: (options: { domain: string }) => Promise<{
-        publicKey?: string
-        error?: { message: string }
-      }>
-      signTransaction: (
-        tx: string,
-        options: { networkPassphrase: string },
-      ) => Promise<{
-        signedXDR?: string
-        error?: { message: string }
-      }>
-    }
-  }
 }

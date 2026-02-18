@@ -6,14 +6,19 @@ Welcome to the Soul-Society documentation! This folder contains comprehensive gu
 
 ### Core Documentation
 
-1. **[Backend API Documentation](./BACKEND_API.md)**
+1. **[Environment Setup (Frontend & Server)](./ENV_SETUP.md)**
+   - Copy `.env.example` to `.env` / `.env.local`
+   - Required variables for server and frontend
+   - Security notes
+
+2. **[Backend API Documentation](./BACKEND_API.md)**
    - Complete API reference
    - Authentication & authorization
    - Data models & schemas
    - Stellar & IPFS integration
    - Error handling
 
-2. **[Frontend Guide](./FRONTEND_GUIDE.md)**
+3. **[Frontend Guide](./FRONTEND_GUIDE.md)**
    - Tech stack & architecture
    - Component documentation
    - State management (Redux)
@@ -22,42 +27,42 @@ Welcome to the Soul-Society documentation! This folder contains comprehensive gu
 
 ### Feature-Specific Guides
 
-3. **[NGO Dashboard Guide](./NGO_DASHBOARD_GUIDE.md)**
+4. **[NGO Dashboard Guide](./NGO_DASHBOARD_GUIDE.md)**
    - Create posts/tasks
    - Send payments to wallets
    - Upload proofs
    - Complete workflows
 
-4. **[Backend-Frontend Data Flow](./BACKEND_FRONTEND_DATA_FLOW.md)**
+5. **[Backend-Frontend Data Flow](./BACKEND_FRONTEND_DATA_FLOW.md)**
    - Complete data flow diagrams
    - API request/response formats
    - Database field mappings
 
 ### Bug Fixes & Solutions
 
-5. **[Amount & Wallet Address Fix](./AMOUNT_WALLET_FIX.md)**
+6. **[Amount & Wallet Address Fix](./AMOUNT_WALLET_FIX.md)**
    - Stellar amount formatting (7 decimals)
    - Wallet address integration
 
-6. **[Wallet Address Missing Fix](./WALLET_ADDR_MISSING_FIX.md)**
+7. **[Wallet Address Missing Fix](./WALLET_ADDR_MISSING_FIX.md)**
    - Task object wallet address issue
    - Data flow corrections
 
-7. **[Memo Length Fix](./MEMO_LENGTH_FIX.md)**
+8. **[Memo Length Fix](./MEMO_LENGTH_FIX.md)**
    - Stellar memo 28-byte limit
    - Solution implementation
 
-8. **[Network Error Fix](./NETWORK_ERROR_FIX.md)**
+9. **[Network Error Fix](./NETWORK_ERROR_FIX.md)**
    - CORS configuration
    - Environment variables
    - Frontend-backend connection
 
-9. **[Duplication Error Fix](./DUPLICATION_ERROR_FIX.md)**
+10. **[Duplication Error Fix](./DUPLICATION_ERROR_FIX.md)**
    - MongoDB unique constraint
    - Idempotent API design
    - Duplicate prevention
 
-10. **[Memo vs Backend Data](./MEMO_VS_BACKEND_DATA.md)**
+11. **[Memo vs Backend Data](./MEMO_VS_BACKEND_DATA.md)**
     - Why data is sent via API, not Stellar memo
     - Best practices explanation
 

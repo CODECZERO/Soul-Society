@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress"
 import { StellarPriceDisplay } from "@/components/stellar-price-display"
 import { Heart, Share2, MapPin, Loader2, ShieldCheck, Activity, Database, FileCheck, ThumbsUp, ThumbsDown } from "lucide-react"
 import { getPosts, getDonationsByPost, getExpensesByPostId, getProofsByTask, voteOnProof, type Post, type Donation } from "@/lib/api-service"
+import { ipfsImageUrl } from "@/lib/ipfs"
 import { mockTasks } from "@/lib/mock-data"
 import { useWallet } from "@/lib/wallet-context"
 import { submitVoteTransaction } from "@/lib/stellar-utils"
@@ -179,7 +180,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             <div className="lg:col-span-2">
               <div className="relative aspect-video mb-8 overflow-hidden group">
                 <img
-                  src={task.ImgCid || task.image || '/placeholder.jpg'}
+                  src={ipfsImageUrl(task.ImgCid || task.image)}
                   alt={task.Title || task.title || 'Task image'}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   onError={(e) => {
@@ -287,25 +288,50 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                         <p className="text-sm text-zinc-500">No donations yet for this campaign</p>
                       </div>
                     ) : (
-                      donations.map((donation, index) => (
-                        <div key={donation._id || index} className="bg-zinc-900/50 border border-zinc-800 rounded-md p-5 space-y-3 hover:border-amber-500/20 transition-colors group">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <p className="font-semibold text-white">Donation</p>
-                              <p className="text-xs text-zinc-500">
-                                {new Date(donation.createdAt || Date.now()).toLocaleString()}
-                              </p>
+                      donations.map((donation, index) => {
+                        const txHash = donation.currentTxn || (donation as any).transactionId || (donation as any).TransactionId
+                        const donor = (donation as { Donor?: string }).Donor ?? (donation as any).donor
+                        const stellarExplorerUrl = txHash ? `https://stellar.expert/explorer/testnet/tx/${txHash}` : null
+                        return (
+                        <div key={donation._id || index} className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-5 space-y-4 hover:border-amber-500/30 transition-colors">
+                          <div className="flex items-start gap-4">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
+                              <Heart className="h-5 w-5" />
                             </div>
-                            <p className="font-bold text-lg text-amber-400">₹{donation.Amount.toLocaleString()}</p>
+                            <div className="min-w-0 flex-1 space-y-3">
+                              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                                <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Amount</span>
+                                <p className="font-bold text-xl text-amber-400">₹{Number(donation.Amount ?? 0).toLocaleString()}</p>
+                              </div>
+                              <StellarPriceDisplay amount={donation.Amount} />
+                              <div className="grid gap-1 text-sm">
+                                <div className="flex flex-wrap items-center gap-x-2">
+                                  <span className="text-zinc-500">Date</span>
+                                  <span className="text-zinc-300">{new Date(donation.createdAt || Date.now()).toLocaleString()}</span>
+                                </div>
+                                {donor && (
+                                  <div className="flex flex-wrap items-center gap-x-2">
+                                    <span className="text-zinc-500">Donor</span>
+                                    <span className="font-mono text-zinc-400 truncate max-w-[200px]" title={donor}>{donor}</span>
+                                  </div>
+                                )}
+                                {txHash && (
+                                  <div className="flex flex-wrap items-center gap-x-2">
+                                    <span className="text-zinc-500">Transaction</span>
+                                    {stellarExplorerUrl ? (
+                                      <a href={stellarExplorerUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-amber-400 hover:text-amber-300 truncate max-w-[220px] underline">
+                                        {txHash.slice(0, 8)}…{txHash.slice(-8)}
+                                      </a>
+                                    ) : (
+                                      <span className="font-mono text-zinc-400 truncate max-w-[220px]">{txHash}</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <StellarPriceDisplay amount={donation.Amount} />
-                          </div>
-                          <p className="text-xs text-zinc-500 truncate">
-                            TX: {donation.currentTxn}
-                          </p>
                         </div>
-                      ))
+                      )})
                     )}
                   </div>
                 </TabsContent>
@@ -339,6 +365,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 </TabsContent>
 
                 <TabsContent value="proofs" className="mt-8">
+                  <p className="text-xs text-zinc-500 mb-4">Connect your wallet to verify or flag expenditure proofs. Your vote is recorded on-chain.</p>
                   <div className="space-y-4">
                     {proofs.length === 0 ? (
                       <div className="text-center py-12 border border-dashed border-zinc-800 rounded-md">

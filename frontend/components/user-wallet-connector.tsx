@@ -1,10 +1,10 @@
 "use client"
-// @ts-nocheck
 
 import { useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import type { RootState, AppDispatch } from "@/lib/redux/store"
 import { connectWallet, disconnectWallet } from "@/lib/redux/slices/wallet-slice"
+import type { WalletType } from "@/lib/wallet-types"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Wallet, ExternalLink, AlertCircle, CheckCircle } from "lucide-react"
@@ -25,7 +25,7 @@ export function UserWalletConnector({
   const { isConnected, publicKey, isConnecting, error } = useSelector((state: RootState) => state.wallet)
   const [walletSelectorOpen, setWalletSelectorOpen] = useState(false)
 
-  const handleConnect = async (walletType: string) => {
+  const handleConnect = async (walletType: WalletType) => {
     try {
       await dispatch(connectWallet(walletType))
       if (onConnect && publicKey) {

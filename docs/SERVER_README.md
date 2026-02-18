@@ -37,28 +37,9 @@ server/
 
 ## 🔧 Environment Setup
 
-### Required Environment Variables
+Copy `server/.env.example` to `server/.env` and fill in your values. For a full list of variables and descriptions, see [Environment Setup](ENV_SETUP.md).
 
-```env
-# Database
-MONGODB_URI=mongodb://localhost:27017/soul-society
-
-# JWT Secrets
-ATS=your-access-token-secret
-RTS=your-refresh-token-secret
-ATE=15m
-RTE=7d
-
-# Stellar Configuration
-BLOCKCHAIN_NETWORK=https://horizon-testnet.stellar.org
-
-# Frontend URL
-FRONTEND_URL=http://localhost:3000
-
-# Node Environment
-NODE_ENV=development
-PORT=8000
-```
+**Required:** `FRONTEND_URL`, `ATS`, `RTS`, `BLOCKCHAIN_NETWORK`, `SOROBAN_RPC_URL`, `STACK_ADMIN_SECRET`, `PINATA_JWT`, and all contract IDs (after running `./deploy_contract.sh`).
 
 ### Installation & Setup
 

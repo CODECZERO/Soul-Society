@@ -83,9 +83,9 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
       // Create real Stellar transaction
       const result = await submitDonationTransaction(
         publicKey,
-        receiverAddress,
         stellarAmount.toFixed(7),
         taskId,
+        receiverAddress,
         signTransaction
       )
 
@@ -190,7 +190,7 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
             <Button
               onClick={() => setStep("confirm")}
               disabled={!amount || !isConnected}
-              className="w-full bg-primary hover:bg-primary/90"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold"
             >
               Continue
             </Button>
@@ -222,7 +222,7 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
               </p>
             </div>
 
-            <Button onClick={handleConfirm} disabled={isProcessing} className="w-full bg-primary hover:bg-primary/90">
+            <Button onClick={handleConfirm} disabled={isProcessing} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold">
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -260,7 +260,7 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
             </div>
 
             <div className="space-y-2">
-              <Button onClick={handleClose} className="w-full bg-primary hover:bg-primary/90">
+              <Button onClick={handleClose} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold">
                 Done
               </Button>
             </div>
@@ -278,10 +278,10 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
             </div>
 
             <div className="space-y-2">
-              <Button onClick={() => setStep("confirm")} className="w-full bg-primary hover:bg-primary/90">
+              <Button onClick={() => setStep("confirm")} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold">
                 Try Again
               </Button>
-              <Button onClick={handleClose} variant="outline" className="w-full bg-transparent">
+              <Button onClick={handleClose} variant="outline" className="w-full border-zinc-300 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900">
                 Cancel
               </Button>
             </div>

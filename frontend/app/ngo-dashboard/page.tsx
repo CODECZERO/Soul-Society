@@ -111,7 +111,13 @@ export default function NGODashboardPage() {
     )
   }
 
-  const ngoPosts = posts.filter(post => post.NgoRef === ngoProfile?.id)
+  const ngoPosts = posts.filter(
+    (post) =>
+      post.NgoRef === ngoProfile?.id ||
+      post.NgoRef === (ngoProfile as any)?._id ||
+      (post as any).ngo === ngoProfile?.id ||
+      (post as any).ngo === (ngoProfile as any)?._id
+  )
 
   const tasks = ngoPosts.map(post => {
     const taskDonations = donations.filter(d => d.postIDs === post._id)

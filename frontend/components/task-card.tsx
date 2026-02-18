@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { useMounted } from "@/hooks/use-mounted"
+import { ipfsImageUrl } from "@/lib/ipfs"
 
 interface BaseTask {
   _id: string
@@ -52,7 +53,7 @@ export function TaskCard({ task }: TaskCardProps) {
     <Card className="bg-zinc-950 border-zinc-800 rounded-lg overflow-hidden hover:border-amber-500/40 transition-all duration-300 group">
       <div className="relative h-48 overflow-hidden">
         <img
-          src={task.ImgCid || task.image || "/placeholder.svg"}
+          src={ipfsImageUrl(task.ImgCid || task.image)}
           alt={task.Title || task.title || 'Task image'}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={(e) => {

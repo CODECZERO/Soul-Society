@@ -41,6 +41,7 @@ export interface Donation {
     currentTxn: string;
     postIDs: string;
     Amount: number;
+    Donor?: string;
     createdAt?: string;
     updatedAt?: string;
 }

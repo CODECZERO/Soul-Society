@@ -336,7 +336,7 @@ export default function CreatePostPage() {
               </div>
 
               <div className="flex gap-4">
-                <Button variant="outline" onClick={() => setStep("form")} className="flex-1">
+                <Button variant="outline" onClick={() => setStep("form")} className="flex-1 border-zinc-300 text-zinc-700 hover:bg-zinc-100">
                   Edit
                 </Button>
                 <Button
@@ -378,7 +378,7 @@ export default function CreatePostPage() {
               </div>
 
               <div className="flex gap-4">
-                <Button variant="outline" onClick={() => router.push("/ngo/dashboard")} className="flex-1">
+                <Button variant="outline" onClick={() => router.push("/ngo/dashboard")} className="flex-1 border-zinc-300 text-zinc-700 hover:bg-zinc-100">
                   Go to Dashboard
                 </Button>
                 <Button onClick={handleReset} className="flex-1 bg-primary hover:bg-primary/90">

@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Wallet, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
 import { useWallet, useFreighterAvailable, useNetworkInfo } from "@/hooks/use-wallet"
 import { NETWORK_LABELS } from '@/lib/constants'
+import type { WalletType } from "@/lib/wallet-types"
 
 interface WalletConnectorProps {
   onConnect?: () => void
@@ -32,7 +33,7 @@ export function WalletConnector({ onConnect, onDisconnect, className }: WalletCo
   const { network, isTestnet } = useNetworkInfo()
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const handleConnect = async (walletType: 'freighter' | 'albedo' | 'rabet') => {
+  const handleConnect = async (walletType: WalletType) => {
     try {
       await connect(walletType)
       onConnect?.()
@@ -175,13 +176,13 @@ export function WalletConnector({ onConnect, onDisconnect, className }: WalletCo
           </Button>
 
           <Button
-            onClick={() => handleConnect('rabet')}
+            onClick={() => handleConnect('lobstr')}
             disabled={isConnecting}
             className="w-full justify-start"
             variant="outline"
           >
             <CheckCircle className="h-4 w-4 mr-2" />
-            Rabet Wallet
+            LOBSTR Vault
           </Button>
         </div>
 

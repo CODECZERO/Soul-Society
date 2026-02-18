@@ -132,7 +132,7 @@ export function DonationModal({ isOpen, onClose, task, onSuccess }: DonationModa
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} className="border-zinc-300 text-zinc-700 hover:bg-zinc-100">
             Cancel
           </Button>
           <Button 

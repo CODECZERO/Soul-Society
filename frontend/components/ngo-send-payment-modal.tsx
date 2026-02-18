@@ -275,7 +275,7 @@ export function NGOSendPaymentModal({ isOpen, onClose, task }: NGOSendPaymentMod
               <Button onClick={() => setStep("form")} className="w-full bg-primary hover:bg-primary/90">
                 Try Again
               </Button>
-              <Button onClick={handleClose} variant="outline" className="w-full">
+              <Button onClick={handleClose} variant="outline" className="w-full border-zinc-300 text-zinc-700 hover:bg-zinc-100">
                 Cancel
               </Button>
             </div>

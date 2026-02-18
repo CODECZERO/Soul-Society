@@ -193,7 +193,7 @@ export function NGOAuthModal() {
               )}
             </Button>
             {authMode === "signup" && (
-              <Button type="button" variant="outline" onClick={() => dispatch(closeAuthModal())} className="flex-1">
+              <Button type="button" variant="outline" onClick={() => dispatch(closeAuthModal())} className="flex-1 border-zinc-300 text-zinc-700 hover:bg-zinc-100">
                 Cancel
               </Button>
             )}

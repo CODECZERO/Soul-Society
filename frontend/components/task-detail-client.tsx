@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react"
 import { Header } from "@/components/header"
 import { postsApi } from "@/lib/api-client"
+import { ipfsImageUrl } from "@/lib/ipfs"
 import { Loader2 } from "lucide-react"
 
 interface TaskDetailClientProps {
@@ -68,7 +69,7 @@ export function TaskDetailClient({ taskId }: TaskDetailClientProps) {
         <div className="mx-auto max-w-6xl">
           <h1 className="text-2xl font-bold mb-4">{task.Title}</h1>
           <img
-            src={task.ImgCid ? `https://gateway.pinata.cloud/ipfs/${task.ImgCid}` : "/placeholder.svg"}
+            src={ipfsImageUrl(task.ImgCid || task.image)}
             alt={task.Title}
             className="w-full h-96 object-cover rounded-lg mb-6"
           />
