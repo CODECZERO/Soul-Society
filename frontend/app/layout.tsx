@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ReduxProvider } from "@/lib/redux-provider"
@@ -15,6 +15,12 @@ export const metadata: Metadata = {
   title: "Soul-Society - Transparent NGO Donations",
   description: "Donate small. Track big. Every rupee verified on the blockchain.",
   generator: "v0.app",
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 }
 
 import { WalletProvider } from "@/lib/wallet-context"
