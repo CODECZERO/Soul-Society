@@ -83,7 +83,7 @@ export const clearWalletData = () => {
     try {
       const dbs = ['freighter', 'wallet-connector'];
       dbs.forEach(dbName => {
-        window.indexedDB.deleteDatabase(dbName).catch(() => {});
+        (req => { if (typeof (req as any).catch === 'function') (req as any).catch(() => {}); })(window.indexedDB.deleteDatabase(dbName));
       });
     } catch (error) {
       
