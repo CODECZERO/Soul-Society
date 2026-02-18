@@ -38,7 +38,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       }
 
       const key = await connector.connect()
-      setPublicKey(key)
+      setPublicKey(typeof key === 'string' ? key : String(key))
       setWalletType(selectedWalletType)
       setIsConnected(true)
 
@@ -49,7 +49,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to connect wallet"
       setError(message)
-      } finally {
+    } finally {
       setIsConnecting(false)
     }
   }, [])
