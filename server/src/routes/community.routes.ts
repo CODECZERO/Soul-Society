@@ -26,6 +26,7 @@ const router = Router();
 
 // Community Hub
 router.get('/all', getCommunitiesList);
+router.get('/leaderboard', getLeaderboard);
 router.get('/:id', getCommunity); // Generic ID lookup for Community Details
 
 // Community voting on Tasks (Main)
@@ -44,6 +45,5 @@ router.get('/proof/verify/:hash', verifyProofByHash);
 
 // Voter stats & leaderboard
 router.get('/voter/:walletAddr', getVoterAccuracy);
-router.get('/leaderboard', getLeaderboard);
 
 export default router;
