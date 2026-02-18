@@ -18,7 +18,7 @@ export interface WalletInfo {
 }
 
 export interface WalletActions {
-  connect: (walletType: 'freighter' | 'albedo' | 'rabet') => Promise<void>
+  connect: (walletType: WalletType) => Promise<void>
   disconnect: () => void
   signTx: (transactionXDR: string) => Promise<string>
   refreshBalance: () => Promise<void>
@@ -30,7 +30,7 @@ export function useWallet(): WalletInfo & WalletActions {
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Connect wallet
-  const connect = useCallback(async (walletType: 'freighter' | 'albedo' | 'rabet') => {
+  const connect = useCallback(async (walletType: WalletType) => {
     try {
       await dispatch(connectWallet(walletType as WalletType)).unwrap()
     } catch (error) {
@@ -61,8 +61,9 @@ export function useWallet(): WalletInfo & WalletActions {
       setIsRefreshing(true)
       const balance = await getAccountBalance(walletState.publicKey)
       dispatch(setBalance(balance))
-    } catch (error) {
-      } finally {
+    } catch {
+      // ignore
+    } finally {
       setIsRefreshing(false)
     }
   }, [walletState.publicKey, dispatch])
@@ -130,10 +131,10 @@ export function useNetworkInfo() {
   useEffect(() => {
     const getNetworkInfo = async () => {
       try {
-        const { getNetwork } = await import("@stellar/freighter-api")
-        const result = await getNetwork()
-        if (!result.error) {
-          setNetwork(result.network)
+        const freighter = await import("@stellar/freighter-api") as any
+        const result = await freighter.getNetwork?.()
+        if (result && !result.error) {
+          setNetwork(result.network || '')
 
           // Basic check if it contains TESTNET
           if (result.network === 'TESTNET') {
@@ -142,8 +143,9 @@ export function useNetworkInfo() {
             setIsTestnet(false)
           }
         }
-      } catch (error) {
-        }
+      } catch {
+        // ignore
+      }
     }
 
     getNetworkInfo()
