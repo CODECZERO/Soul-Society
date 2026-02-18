@@ -1,29 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from './apiError.util.js';
+import logger from './logger.js';
 
 const AsyncHandler = (
   requestHandler: (req: Request, res: Response, next: NextFunction) => Promise<any>
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(requestHandler(req, res, next)).catch((error: any) => {
-      // Log the error for debugging purposes
-      console.error(error);
-
-      const errorData = {
-        timestamp: new Date(),
-        message: error.message,
-        stack: error.stack,
-        // Add other relevant error details
-      };
-
-      // Handle specific error types if needed
       if (error instanceof ApiError) {
-        return next(error); // Pass ApiError to error middleware
+        if (error.statusCode >= 500) {
+          logger.error('AsyncHandler', { message: error.message, stack: error.stack, url: req.originalUrl });
+        } else {
+          logger.warn('Client error', { statusCode: error.statusCode, message: error.message, url: req.originalUrl });
+        }
+        return next(error);
       }
-
-      // Create a generic error response
-      const apiError = new ApiError(500, 'Internal Server Error');
-      next(apiError);
+      logger.error('Unhandled error in AsyncHandler', { message: error?.message, stack: error?.stack, url: req.originalUrl });
+      next(new ApiError(500, 'Internal Server Error'));
     });
   };
 };
