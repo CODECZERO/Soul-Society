@@ -122,9 +122,14 @@ const getLatestContractData = AsyncHandler(async (req: Request, res: Response) =
 });
 
 // Get transaction history for a public key
+const STELLAR_ACCOUNT_ID_REGEX = /^G[A-Z2-7]{55}$/;
+
 const getAccountTransactions = AsyncHandler(async (req: Request, res: Response) => {
   const { publicKey } = req.params;
   if (!publicKey) throw new ApiError(400, 'Public key is required');
+  if (!STELLAR_ACCOUNT_ID_REGEX.test(publicKey)) {
+    throw new ApiError(400, 'Invalid account ID: must start with G and contain 56 alphanumeric characters');
+  }
 
   const limit = parseInt(req.query.limit as string) || 20;
   const order = (req.query.order as 'asc' | 'desc') || 'desc';
