@@ -75,10 +75,10 @@ The core of Soul-Society is the **Trustless Escrow System** designed to prevent 
 ### How it Works
 1. **Donation**: Donor contributes to a task. 50% goes to NGO immediately; 50% is **locked in escrow**.
 2. **Proof**: NGO submits proof-of-work (photos/videos) to IPFS.
-3. **Verification**: Community members vote on the authenticity of the proof.
+3. **Verification**: Community members vote on the authenticity of the proof or the mission itself via the **Authenticity Check** UI.
 4. **Outcome**:
    - ✅ **Verified**: Locked funds released to NGO. Voters earn **Soul Badges** and **Reiatsu Tokens**.
-   - ❌ **Scam**: Funds remain locked for 30 days, then **refunded to donor**.
+   - ❌ **Scam**: Funds remain locked for 30 days, then **refunded to donor**. Mission is flagged in the registry.
 
 ```mermaid
 sequenceDiagram
