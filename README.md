@@ -8,7 +8,7 @@
   [![Soroban](https://img.shields.io/badge/Soroban-Testnet-blue)](https://soroban.stellar.org/)
   [![CI/CD](https://github.com/yourusername/soul-society/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/soul-society/actions)
 
-  <img src="public/home_page_soul_society.png" alt="Soul-Society Dashboard" width="100%" />
+  <img src="docs/assets/screenshots/landing_page.png" alt="Soul-Society Dashboard" width="100%" />
 </div>
 
 ---
@@ -145,6 +145,31 @@ npm run dev
 
 ---
 
+## 📸 Visual Tour
+
+### Landing Page & Mission Overview
+![Landing Page](docs/assets/screenshots/landing_page.png)
+
+### Explore Campaigns
+![Explore Campaigns](docs/assets/screenshots/explore_campaigns.png)
+
+### NGO Portal
+![NGO Login](docs/assets/screenshots/ngo_login.png)
+
+### Blockchain Transparency
+| Wallet Integration | On-Chain Verification |
+|:---:|:---:|
+| ![Wallet View](docs/assets/screenshots/wallet_view.png) | ![Stellar Expert](docs/assets/screenshots/stellar_expert.png) |
+
+---
+
+## 🎥 Demo Video
+
+Check out the full workflow in action:
+[Watch Demo Video](docs/assets/videos/demo_video.mp4)
+
+---
+
 ## 🏆 Stellar Journey to Mastery — Level-wise Checklist
 
 ### Level 2 — White Belt (Multi-wallet, Contract, Real-time)
@@ -163,9 +188,9 @@ npm run dev
 
 **Submission (optional):**
 - [ ] Live demo link (Vercel/Netlify)
-- [ ] Screenshot: wallet options available
-- [ ] Deployed contract address (see **Deployed contract addresses** below)
-- [ ] Transaction hash of a contract call (verifiable on [Stellar Explorer](https://stellar.expert))
+- [x] Screenshot: [Wallet Integration](docs/assets/screenshots/wallet_view.png)
+- [x] Deployed contract address (see **Deployed contract addresses** below)
+- [x] Transaction hash of a contract call: [Stellar Expert View](docs/assets/screenshots/stellar_expert.png)
 
 ---
 
@@ -178,7 +203,7 @@ npm run dev
 | Mini-dApp fully functional | [x] Done |
 | Minimum 3 tests passing | [x] Done — Server: 38 Jest tests; Smart contracts: 54 `cargo test`; Frontend: Playwright e2e |
 | README complete | [x] Done — setup, architecture, level checklists |
-| Demo video recorded | [ ] Optional — 1-minute demo link in README when ready |
+| Demo video recorded | [x] Done — [Watch Demo Video](docs/assets/videos/demo_video.mp4) |
 | Minimum 3+ meaningful commits | [x] Done |
 
 **Deliverable:** Complete mini-dApp with documentation and tests — [x] Done
@@ -186,7 +211,7 @@ npm run dev
 **Submission (optional):**
 - [ ] Live demo link (Vercel/Netlify)
 - [ ] Screenshot: test output showing 3+ tests passing
-- [ ] Demo video link (1-minute) showing full functionality
+- [x] Demo video link: [Project Demo](docs/assets/videos/demo_video.mp4)
 
 ---
 
