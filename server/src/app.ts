@@ -64,6 +64,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'AidBridge Backend API is active',
+    project: 'Soul-Society (Stellar Hackathon)',
+    version: '1.0.0'
+  });
+});
+
 app.use('/api', routes);
 
 // Health check endpoint
