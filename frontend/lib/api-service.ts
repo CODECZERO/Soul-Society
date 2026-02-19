@@ -24,13 +24,13 @@ export * from './types';
 // Export instances
 export { authService, postService, donationService, stellarService, ipfsService, userService };
 export { apiClient };
-export { 
-  escrowContractService, 
-  missionRegistryContractService, 
-  reiatsuTokenContractService, 
-  soulBadgeContractService, 
-  treasuryContractService, 
-  soulReaperRegistryContractService, 
+export {
+  escrowContractService,
+  missionRegistryContractService,
+  reiatsuTokenContractService,
+  soulBadgeContractService,
+  treasuryContractService,
+  soulReaperRegistryContractService,
   vaultContractService,
   notificationsContractService
 };
@@ -67,6 +67,9 @@ export const getUserProfile = (addr: string) => userService.getUserProfile(addr)
 export const getProofsByTask = (id: string) => stellarService.getProofsByTask(id);
 export const voteOnProof = (id: string, data: any) => stellarService.voteOnProof(id, data);
 export const verifyProof = (hash: string) => stellarService.verifyProof(hash);
+export const voteOnTask = (data: any) => stellarService.voteOnTask(data);
+export const getVotesForTask = (id: string) => stellarService.getVotesForTask(id);
+
 // Mock expenses for now if not implemented
 export const getExpensesByPostId = (id: string) => Promise.resolve({ success: true, data: { prevTxn: [] } });
 
