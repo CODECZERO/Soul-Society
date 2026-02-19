@@ -7,6 +7,7 @@ import { getAllNGOs } from '../dbQueries/ngo.Queries.js';
 import { getPosts } from '../dbQueries/post.Queries.js';
 import { getXLMtoINRRate } from '../util/exchangeRate.util.js';
 import { getAllExpenses } from '../dbQueries/expense.Queries.js';
+import logger from '../util/logger.js';
 
 const getStats = AsyncHandler(async (req: Request, res: Response) => {
   try {
@@ -96,12 +97,33 @@ const getDonorStats = AsyncHandler(async (req: Request, res: Response) => {
 
   try {
     const donations = await getAllDonation();
-    const donorDonations = (donations || []).filter(
-      (d) => d.Donor === walletAddr
-    );
+    logger.info(`[STATS] Found ${donations ? donations.length : 0} total donations in Vault.`);
 
-    const totalXLM = donorDonations.reduce((sum: number, d: any) => sum + (d.Amount || 0), 0);
+    if (donations && donations.length > 0) {
+      logger.info(`[STATS] Sample Donor from Vault: "${donations[0].Donor}"`);
+      logger.info(`[STATS] Incoming walletAddr: "${walletAddr}"`);
+    }
+
+    const donorDonations = (donations || []).filter(
+      (d) => {
+        // Use case-insensitive comparison for safety with wallet addresses
+        const match = d.Donor?.toLowerCase() === walletAddr?.toLowerCase();
+        return match;
+      }
+    );
+    logger.info(`[STATS] Found ${donorDonations.length} matches for donor ${walletAddr}`);
+
+    // Force fresh data by disabling ETags for this response
+    res.set('ETag', 'false');
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
+    const totalXLM = donorDonations.reduce((sum: number, d: any) => {
+      const amt = Number(d.Amount) || 0;
+      return sum + amt;
+    }, 0);
     const missionCount = new Set(donorDonations.map((d) => d.postIDs)).size;
+
+    logger.info(`[STATS] Total REIATSU for ${walletAddr}: ${totalXLM}`);
 
     let badge = 'Academy Student';
     if (totalXLM >= 500) badge = 'Captain';
@@ -117,6 +139,7 @@ const getDonorStats = AsyncHandler(async (req: Request, res: Response) => {
 
     return res.status(200).json(new ApiResponse(200, donorInfo, 'donor stats retrieved'));
   } catch (error) {
+    logger.error(`[STATS] Failed to get donor stats for ${walletAddr}:`, error);
     return res.status(500).json(new ApiResponse(500, null, 'failed to get donor stats'));
   }
 });
