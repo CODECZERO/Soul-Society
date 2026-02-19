@@ -13,18 +13,27 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(",").map(origin => origin.trim())
+  ? process.env.FRONTEND_URL.split(",").map(origin => {
+    // Trim whitespace and trailing slashes to prevent common CORS mismatches
+    return origin.trim().replace(/\/$/, "");
+  })
   : ['http://localhost:3000'];
+
+// Log allowed origins for debugging
+logger.info(`[CORS] Allowed Origins: ${allowedOrigins.join(", ")}`);
 
 app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
 
 app.use(
   helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
