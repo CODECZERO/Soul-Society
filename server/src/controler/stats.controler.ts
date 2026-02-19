@@ -44,26 +44,36 @@ const getLeaderboard = AsyncHandler(async (req: Request, res: Response) => {
   try {
     const ngos = await getAllNGOs();
     const allPosts = await getPosts();
+    const allDonations = await getAllDonation();
     const XLM_TO_INR_RATE = await getXLMtoINRRate();
 
     const leaderboard = ngos.map((ngo: any) => {
       const ngoId = ngo.id || ngo._id || ngo.Id;
-      // Filter posts that belong to this NGO
-      const missions = allPosts.filter(
-        (p: any) => p.NgoRef === ngoId || (p as any).ngo === ngoId
-      );
-      const completedCount = missions.filter((m: any) => m.Status === 'Completed' || m.status === 'Completed').length;
 
-      const totalXLM = missions.reduce(
-        (sum: number, m: any) => sum + (m.CollectedAmount || 0),
+      // Filter all donations that were made to any post by this NGO
+      const ngoPosts = allPosts.filter(
+        (p: any) => p.NgoRef === ngoId || (p as any).ngo === ngoId || (p as any).Author === ngo.walletAddress
+      );
+      const ngoPostIds = ngoPosts.map((p: any) => p.id || p._id || p._id?.toString());
+
+      const ngoDonations = (allDonations || []).filter((d: any) =>
+        ngoPostIds.includes(d.postIDs) || ngoPostIds.includes(d.postID)
+      );
+
+      const totalXLM = ngoDonations.reduce(
+        (sum: number, d: any) => sum + (Number(d.Amount) || 0),
         0
       );
       const totalINR = Math.round(totalXLM * XLM_TO_INR_RATE);
 
+      const completedCount = ngoPosts.filter(
+        (m: any) => m.Status === 'Completed' || m.status === 'Completed'
+      ).length;
+
       return {
         divisionId: ngoId,
         name: ngo.name || ngo.NgoName || ngo.Name || 'AidBridge Division',
-        captain: (ngo.walletAddress || ngo.WalletAddress || ngo.PublicKey || '').substring(0, 6) + '...',
+        captain: (ngo.walletAddress || ngo.WalletAddress || ngo.PublicKey || '').substring(0, 8) + '...',
         missionsCompleted: completedCount,
         totalReiatsuInfused: totalINR,
         rank: 0,
@@ -71,10 +81,10 @@ const getLeaderboard = AsyncHandler(async (req: Request, res: Response) => {
     });
 
     leaderboard.sort((a: any, b: any) => {
-      if (b.missionsCompleted !== a.missionsCompleted) {
-        return b.missionsCompleted - a.missionsCompleted;
+      if (b.totalReiatsuInfused !== a.totalReiatsuInfused) {
+        return b.totalReiatsuInfused - a.totalReiatsuInfused;
       }
-      return b.totalReiatsuInfused - a.totalReiatsuInfused;
+      return b.missionsCompleted - a.missionsCompleted;
     });
 
     leaderboard.forEach((item: any, index: number) => {
@@ -85,6 +95,7 @@ const getLeaderboard = AsyncHandler(async (req: Request, res: Response) => {
       .status(200)
       .json(new ApiResponse(200, leaderboard, 'leaderboard retrieved successfully'));
   } catch (error) {
+    logger.error('Error in getLeaderboard:', error);
     return res.status(500).json(new ApiResponse(500, [], 'failed to retrieve leaderboard'));
   }
 });
