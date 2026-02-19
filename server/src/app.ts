@@ -29,7 +29,7 @@ app.use(
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         "script-src": ["'self'", "'unsafe-inline'", "https://va.vercel-scripts.com"],
-        "connect-src": ["'self'", "http://localhost:8000", "http://127.0.0.1:8000", "https://va.vercel-scripts.com", "*.stellar.org", "*.soroban.org"],
+        "connect-src": ["'self'", "http://localhost:8000", "http://127.0.0.1:8000", "https://va.vercel-scripts.com", "*.stellar.org", "*.soroban.org", "https://*.onrender.com"],
       },
     },
   })
