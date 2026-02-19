@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { CheckCircle2, Loader2, TrendingUp, AlertCircle } from "lucide-react"
+import { CheckCircle2, Loader2, TrendingUp, AlertCircle, Zap } from "lucide-react"
 import { convertRsToXlm, convertXlmToRs } from "@/lib/exchange-rates"
 import { useSelector, useDispatch } from "react-redux"
 import type { RootState, AppDispatch } from "@/lib/redux/store"
@@ -12,14 +12,16 @@ import { processDonation, fetchExchangeRate, clearDonationError } from "@/lib/re
 import { signTransaction } from "@/lib/redux/slices/wallet-slice"
 import { getDonorStats } from "@/lib/api-service"
 import { Trophy } from "lucide-react"
+import { addTrustline } from "@/lib/stellar-utils"
 
 interface DonateModalProps {
   isOpen: boolean
   onClose: () => void
+  onSuccess?: () => void
   task: any
 }
 
-export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
+export function DonateModal({ isOpen, onClose, onSuccess, task }: DonateModalProps) {
   const dispatch = useDispatch<AppDispatch>()
   const { isConnected, publicKey, walletType } = useSelector((state: RootState) => state.wallet)
   const { isDonating, error: donationError, exchangeRate, currentDonation } = useSelector((state: RootState) => state.donation)
@@ -29,6 +31,7 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
   const [currency, setCurrency] = useState<'INR' | 'XLM'>('INR')
   const [txHash, setTxHash] = useState("")
   const [donorBadge, setDonorBadge] = useState<any>(null)
+  const [isAddingToken, setIsAddingToken] = useState(false)
 
   const presetAmounts = [50, 100, 200, 500]
   const stellarAmount = currency === 'INR' && amount ? convertRsToXlm(Number.parseFloat(amount), exchangeRate) : Number.parseFloat(amount) || 0
@@ -52,6 +55,8 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
           if (res.success) setDonorBadge(res.data)
         })
       }
+      // Trigger refresh on parent
+      if (onSuccess) onSuccess()
     }
   }, [currentDonation])
 
@@ -65,7 +70,7 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
 
   const handleConfirm = async () => {
     if (!isConnected || !publicKey || !walletType) {
-      
+
       return;
     }
 
@@ -121,9 +126,24 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
     onClose()
   }
 
+  const handleAddToken = async () => {
+    if (!publicKey) return;
+    setIsAddingToken(true);
+    try {
+      // Use the signTransaction thunk to prompt the wallet
+      await addTrustline(publicKey, (xdr) => dispatch(signTransaction(xdr)).unwrap());
+      alert("REI Token successfully added to your wallet! 🚀");
+    } catch (error: any) {
+      console.error("Failed to add token:", error);
+      alert(error.message || "Failed to add token. Please try manually.");
+    } finally {
+      setIsAddingToken(false);
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md bg-zinc-950 border border-zinc-800 rounded-lg p-6">
+      <DialogContent className="max-w-[95vw] sm:max-w-md bg-zinc-950 border border-zinc-800 rounded-lg p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
         <DialogHeader className="mb-6 border-b border-zinc-800 pb-3">
           <DialogTitle className="text-xl font-bold text-white tracking-tight">
             {step === "amount" && "Make a Donation"}
@@ -136,22 +156,22 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
         {step === "amount" && (
           <div className="space-y-4">
             {!isConnected && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex gap-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-yellow-800">Please connect your wallet to donate</p>
+              <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-lg p-3 flex gap-2">
+                <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-yellow-300">Please connect your wallet to donate</p>
               </div>
             )}
 
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <label className="text-sm font-medium text-foreground">Amount</label>
-                <div className="flex bg-gray-100 rounded-lg p-1">
+                <div className="flex bg-zinc-800 rounded-lg p-1">
                   <button
                     type="button"
                     onClick={() => setCurrency('INR')}
                     className={`px-3 py-1 text-xs rounded-md transition-colors ${currency === 'INR'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-zinc-700 text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-white'
                       }`}
                     disabled={!isConnected}
                   >
@@ -161,7 +181,7 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
                     type="button"
                     onClick={() => setCurrency('XLM')}
                     className={`px-4 py-1 text-[10px] font-black uppercase italic transition-all ${currency === 'XLM'
-                      ? 'bg-blue-600 text-black'
+                      ? 'bg-blue-600 text-white'
                       : 'text-zinc-500 hover:text-white'
                       }`}
                     disabled={!isConnected}
@@ -234,31 +254,31 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
 
         {step === "confirm" && (
           <div className="space-y-4">
-            <div className="bg-slate-50 rounded-lg p-4">
-              <p className="text-sm text-muted-foreground">Amount ({currency})</p>
-              <p className="text-2xl font-bold text-foreground">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <p className="text-sm text-zinc-400">Amount ({currency})</p>
+              <p className="text-2xl font-bold text-white">
                 {currency === 'INR' ? `₹${amount}` : `${amount} XLM`}
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-              <p className="text-sm text-muted-foreground">
+            <div className="bg-gradient-to-br from-blue-950/40 to-blue-900/30 rounded-lg p-4 border border-blue-800/50">
+              <p className="text-sm text-zinc-400">
                 Amount ({currency === 'INR' ? 'Stellar' : 'INR'})
               </p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-blue-400">
                 {currency === 'INR'
                   ? `${stellarAmount.toFixed(4)} XLM`
                   : `₹${inrAmount.toFixed(2)}`
                 }
               </p>
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-xs text-zinc-500 mt-2">
                 Exchange Rate: 1 XLM = ₹{exchangeRate.toFixed(2)}
               </p>
             </div>
 
-            <div className="bg-slate-50 rounded-lg p-4">
-              <p className="text-sm text-muted-foreground">Task</p>
-              <p className="font-semibold text-foreground">{task.title}</p>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <p className="text-sm text-zinc-400">Task</p>
+              <p className="font-semibold text-white">{task.title}</p>
             </div>
 
             <Button onClick={handleConfirm} disabled={isDonating} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold">
@@ -275,66 +295,101 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
         )}
 
         {step === "success" && (
-          <div className="space-y-4 text-center">
+          <div className="space-y-4 sm:space-y-6 text-center py-4">
             <div className="flex justify-center">
-              <CheckCircle2 className="h-12 w-12 text-accent" />
+              <div className="bg-accent/10 p-3 rounded-full">
+                <CheckCircle2 className="h-12 w-12 text-accent animate-in zoom-in duration-300" />
+              </div>
             </div>
 
-            <div>
-              <p className="text-sm text-muted-foreground">Donation Amount ({currency})</p>
-              <p className="text-3xl font-bold text-foreground">
-                {currency === 'INR' ? `₹${amount}` : `${amount} XLM`}
+            <div className="space-y-1">
+              <p className="text-xs sm:text-sm text-zinc-400 font-medium uppercase tracking-wider">Spiritual Pressure Infused</p>
+              <p className="text-3xl sm:text-4xl font-black text-white italic tracking-tighter">
+                {currency === 'INR' ? `₹${amount}` : `₹${inrAmount.toFixed(2)}`}
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-              <p className="text-sm text-muted-foreground">
-                Donation Amount ({currency === 'INR' ? 'Stellar' : 'INR'})
-              </p>
-              <p className="text-2xl font-bold text-blue-600">
-                {currency === 'INR'
-                  ? `${stellarAmount.toFixed(4)} XLM`
-                  : `₹${inrAmount.toFixed(2)}`
-                }
-              </p>
+            <div className="bg-gradient-to-br from-amber-950/40 to-amber-900/30 rounded-lg p-3 sm:p-4 border border-amber-800/50 flex justify-between items-center text-left">
+              <div>
+                <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">Stellar Infusion</p>
+                <p className="text-lg sm:text-xl font-bold text-amber-400">
+                  {currency === 'INR' ? stellarAmount.toFixed(4) : amount} XLM
+                </p>
+              </div>
+              <div className="bg-amber-400/10 p-2 rounded-md">
+                <Zap className="h-4 w-4 text-amber-400" />
+              </div>
             </div>
 
-            <div className="bg-slate-50 rounded-lg p-4 text-left">
-              <p className="text-xs text-muted-foreground mb-1">Transaction Hash</p>
-              <p className="font-mono text-xs text-foreground break-all">{txHash}</p>
-              <a
-                href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-primary hover:underline mt-2 inline-block"
-              >
-              </a>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 sm:p-4 text-left">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Transaction Hash</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddToken}
+                    disabled={isAddingToken}
+                    className="text-[10px] text-blue-500 hover:underline font-bold disabled:opacity-50"
+                  >
+                    {isAddingToken ? "ADDING..." : "ADD TO WALLET"}
+                  </button>
+                  <a
+                    href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-amber-500 hover:underline font-bold"
+                  >
+                    VIEW ON-CHAIN
+                  </a>
+                </div>
+              </div>
+              <p className="font-mono text-[10px] text-zinc-400 break-all leading-relaxed bg-black/30 p-2 rounded border border-zinc-800/50">
+                {txHash}
+              </p>
             </div>
 
             {donorBadge && (
-              <div className="mt-4 p-4 bg-zinc-900 border border-amber-500/30 rounded-md relative overflow-hidden group">
-                <div className="absolute -right-4 -top-4 opacity-10 group-hover:rotate-12 transition-transform">
+              <div className="mt-2 p-3 sm:p-4 bg-zinc-900 border border-amber-500/30 rounded-md relative overflow-hidden group text-left">
+                <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 group-hover:rotate-12 transition-all duration-700">
                   <Trophy className="h-24 w-24 text-amber-500" />
                 </div>
-                <p className="text-xs text-zinc-500 mb-1">Donor Recognition</p>
-                <h4 className="text-lg font-bold text-white mb-1">
-                  {donorBadge.currentBadge}
-                </h4>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="h-1 flex-1 bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min((donorBadge.totalReiatsu / 500) * 100, 100)}%` }} />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Trophy className="h-4 w-4 text-amber-500" />
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Donor Recognition</p>
                   </div>
-                  <span className="text-[10px] text-zinc-500">{donorBadge.totalReiatsu} / 500</span>
+                  <h4 className="text-lg font-black text-white italic uppercase mb-2 tracking-tighter">
+                    {donorBadge.currentBadge}
+                  </h4>
+                  <div className="space-y-2">
+                    {(() => {
+                      let nextThreshold = 20;
+                      if (donorBadge.totalReiatsu >= 500) nextThreshold = 1000; // Next goal after Captain
+                      else if (donorBadge.totalReiatsu >= 100) nextThreshold = 500;
+                      else if (donorBadge.totalReiatsu >= 20) nextThreshold = 100;
+
+                      return (
+                        <>
+                          <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-500 rounded-full transition-all duration-1000 ease-out" style={{ width: `${Math.min((donorBadge.totalReiatsu / nextThreshold) * 100, 100)}%` }} />
+                          </div>
+                          <div className="flex justify-between text-[10px] font-mono">
+                            <span className="text-zinc-500">{donorBadge.totalReiatsu} REIATSU</span>
+                            <span className="text-amber-500">NEXT: {nextThreshold}</span>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <p className="text-[11px] text-zinc-400 mt-3 leading-relaxed">
+                    You've reached the <span className="text-amber-400 font-bold">{donorBadge.currentBadge}</span> level. Keep going!
+                  </p>
                 </div>
-                <p className="text-xs text-zinc-500">
-                  You've reached the {donorBadge.currentBadge} donor level. Keep going!
-                </p>
               </div>
             )}
 
-            <div className="space-y-2">
-              <Button onClick={handleClose} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold">
-                Done
+            <div className="pt-2">
+              <Button onClick={handleClose} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-black uppercase tracking-widest rounded-md h-12">
+                Mission Accomplished
               </Button>
             </div>
           </div>
@@ -342,11 +397,11 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
 
         {step === "error" && (
           <div className="space-y-4">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="bg-red-950/30 border border-red-800/50 rounded-lg p-4 flex gap-3">
+              <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-red-900">Transaction Failed</p>
-                <p className="text-sm text-red-700 mt-1">{donationError}</p>
+                <p className="font-semibold text-red-300">Transaction Failed</p>
+                <p className="text-sm text-red-400 mt-1">{donationError}</p>
               </div>
             </div>
 
@@ -354,7 +409,7 @@ export function DonateModal({ isOpen, onClose, task }: DonateModalProps) {
               <Button onClick={() => setStep("confirm")} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold">
                 Try Again
               </Button>
-              <Button onClick={handleClose} variant="outline" className="w-full border-zinc-300 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900">
+              <Button onClick={handleClose} variant="outline" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                 Cancel
               </Button>
             </div>

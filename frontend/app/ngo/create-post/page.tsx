@@ -13,6 +13,7 @@ import { useDispatch, useSelector } from "react-redux"
 import type { RootState, AppDispatch } from "@/lib/redux/store"
 import { createStellarAccount } from "@/lib/stellar-utils"
 import { uploadToIPFS, createPost } from "@/lib/api-service"
+import { TASK_CATEGORIES } from "@/lib/constants"
 import { Loader2, CheckCircle2, ArrowLeft, Upload, AlertCircle } from "lucide-react"
 
 export default function CreatePostPage() {
@@ -226,13 +227,11 @@ export default function CreatePostPage() {
                     <select
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full mt-2 px-3 py-2 border border-border rounded-md text-foreground"
+                      className="w-full mt-2 px-3 py-2 border border-border rounded-md text-zinc-950"
                     >
-                      <option>Education</option>
-                      <option>Health</option>
-                      <option>Relief</option>
-                      <option>Environment</option>
-                      <option>Community</option>
+                      {TASK_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
                 </div>

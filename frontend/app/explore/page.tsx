@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { getPosts, type Post } from "@/lib/api-service"
-import { mockTasks, categories } from "@/lib/mock-data"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/redux/store"
+import { TASK_CATEGORIES } from "@/lib/constants"
 
 export default function ExplorePage() {
   const { searchQuery } = useSelector((state: RootState) => state.ui)
@@ -100,7 +100,7 @@ export default function ExplorePage() {
           {/* Category Filter */}
           <div className="mb-10">
             <div className="flex gap-2 flex-wrap">
-              {["All", ...categories].map((category) => (
+              {["All", ...TASK_CATEGORIES].map((category) => (
                 <Button
                   key={category}
                   variant="outline"

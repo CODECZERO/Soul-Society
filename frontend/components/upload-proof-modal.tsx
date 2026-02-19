@@ -43,14 +43,14 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
       setStep("uploading")
 
       // 1. Upload to IPFS
-      
+
       const ipfsResponse = await uploadToIPFS(formData.file);
       if (!ipfsResponse.success || !ipfsResponse.data) {
         throw new Error("Failed to upload to IPFS");
       }
       const cid = ipfsResponse.data.Hash || ipfsResponse.data.cid || "QmMock" + Math.random().toString(16).slice(2); // Fallback if mock
       setIpfsCid(cid);
-      
+
 
       // 2. Submit Proof Transaction
       // Ensure we have the signer
@@ -58,7 +58,7 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
         throw new Error("Wallet not connected");
       }
 
-      
+
       const result = await submitProofTransaction({
         ngoPublicKey: publicKey, // The signer must be the NGO
         taskId: task.id || task._id, // Handle both id formats
@@ -67,7 +67,7 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
 
       // 3. Save to Backend (Mongo)
       if (result.success && result.hash) {
-        
+
         await submitProof(task.id || task._id, {
           submitter: publicKey,
           cid: cid,
@@ -80,7 +80,7 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
 
       setStep("success")
     } catch (error) {
-      
+
       alert("Failed to submit proof: " + (error as Error).message);
       setStep("form"); // Go back to form on error
     }
@@ -96,7 +96,7 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-zinc-950 border-zinc-800 text-white selection:bg-amber-500/30">
         <DialogHeader>
           <DialogTitle>
             {step === "form" && "Upload Proof"}
@@ -108,9 +108,9 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
         {step === "form" && (
           <div className="space-y-4">
             {task && (
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground">Task</p>
-                <p className="font-semibold text-sm text-foreground">{task.title}</p>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
+                <p className="text-xs text-zinc-500">Task</p>
+                <p className="font-semibold text-sm text-white">{task.title}</p>
               </div>
             )}
 
@@ -137,14 +137,14 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
 
             <div>
               <label className="text-sm font-medium text-foreground">Receipt/Proof File</label>
-              <div className="mt-2 border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:bg-slate-50 transition">
+              <div className="mt-2 border-2 border-dashed border-zinc-800 rounded-lg p-6 text-center cursor-pointer hover:bg-zinc-900/50 transition">
                 <input type="file" onChange={handleFileChange} className="hidden" id="file-input" />
                 <label htmlFor="file-input" className="cursor-pointer">
-                  <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm font-medium text-foreground">
+                  <Upload className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-white">
                     {formData.file ? formData.file.name : "Click to upload or drag and drop"}
                   </p>
-                  <p className="text-xs text-muted-foreground">PNG, JPG, PDF up to 10MB</p>
+                  <p className="text-xs text-zinc-500">PNG, JPG, PDF up to 10MB</p>
                 </label>
               </div>
             </div>
@@ -152,7 +152,7 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
             <Button
               onClick={handleSubmit}
               disabled={!formData.amount || !formData.description || !formData.file}
-              className="w-full bg-primary hover:bg-primary/90"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold h-11"
             >
               Upload Proof
             </Button>
@@ -173,20 +173,20 @@ export function UploadProofModal({ isOpen, onClose, task }: UploadProofModalProp
             </div>
 
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Amount Verified</p>
-              <p className="text-2xl font-bold text-foreground">₹{formData.amount}</p>
+              <p className="text-sm text-zinc-500 mb-1">Amount Verified</p>
+              <p className="text-2xl font-bold text-white">₹{formData.amount}</p>
             </div>
 
-            <div className="bg-slate-50 rounded-lg p-4 text-left">
-              <p className="text-xs text-muted-foreground mb-1">IPFS CID</p>
-              <p className="font-mono text-xs text-foreground break-all">{ipfsCid}</p>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-left">
+              <p className="text-xs text-zinc-500 mb-1">IPFS CID</p>
+              <p className="font-mono text-xs text-zinc-300 break-all">{ipfsCid}</p>
             </div>
 
             <p className="text-sm text-muted-foreground">
               Your proof has been uploaded and will be verified by the blockchain
             </p>
 
-            <Button onClick={handleClose} className="w-full bg-primary hover:bg-primary/90">
+            <Button onClick={handleClose} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold h-11">
               Done
             </Button>
           </div>

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea"
 import { CheckCircle2, Loader2, Upload, Image as ImageIcon, X } from "lucide-react"
 import { uploadToIPFS, createPost } from "@/lib/api-service"
+import { TASK_CATEGORIES } from "@/lib/constants"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/lib/redux/store"
 
@@ -72,7 +73,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
             imageCid = uploadResponse.data.cid || uploadResponse.data.hash
           }
         } catch (uploadError) {
-          } finally {
+        } finally {
           setIsUploadingImage(false)
         }
       }
@@ -186,11 +187,9 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-white text-sm focus:border-amber-500 outline-none"
               >
-                <option value="Education">Education</option>
-                <option value="Healthcare">Healthcare</option>
-                <option value="Environment">Environment</option>
-                <option value="Disaster Relief">Disaster Relief</option>
-                <option value="Community">Community Development</option>
+                {TASK_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
             </div>
 

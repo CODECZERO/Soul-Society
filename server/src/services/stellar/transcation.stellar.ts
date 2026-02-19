@@ -120,18 +120,18 @@ const sendPaymentToWallet = async (walletData: WalletToWallet): Promise<PaymentR
   }
 };
 
-const verfiyTransaction = async (TransactionId: string) => {
+const verfiyTransaction = async (TransactionId: string): Promise<any> => {
   try {
     const transaction = await STELLAR_CONFIG.server
       .transactions()
       .transaction(TransactionId)
       .call();
-    if (!transaction) throw new Error('No transaction found');
     return transaction;
   } catch (error) {
-    return error;
+    console.error(`[STELLAR] Transaction ${TransactionId} not found or failed:`, error);
+    return null;
   }
 };
 
-const getTransactionData = async (TransactionId: string) => {};
+const getTransactionData = async (TransactionId: string) => { };
 export { sendPaymentToWallet, getBalance, verfiyTransaction };

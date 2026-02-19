@@ -50,11 +50,11 @@ export const connectWallet = createAsyncThunk<
       const { getAccountBalance } = await import("@/lib/stellar-utils")
       balance = await getAccountBalance(publicKey)
     } catch (error) {
-      }
+    }
 
     return { publicKey, balance, walletType }
   } catch (error: any) {
-    
+
     let message = "Failed to connect wallet";
 
     // Error handling as per Level 2 requirements
@@ -89,7 +89,16 @@ const walletSlice = createSlice({
             state.walletType = walletType as any
             state.publicKey = publicKey
             state.error = null
+
+            // Re-initialize the kit for this session
+            // Although side effects are discouraged in reducers, this is a necessary 
+            // sync initialization for the kit singleton to function in this session
+            try {
+              kit.setWallet(walletType as any);
+            } catch (e) {
+              console.warn("[WALLET] Failed to set kit wallet during restoration:", e);
             }
+          }
         } catch (error) {
           // Clear potentially corrupted state
           if (typeof window !== 'undefined') {
@@ -161,10 +170,28 @@ export const signTransaction = createAsyncThunk<
   "wallet/signTransaction",
   async (transactionXDR: string, { getState, rejectWithValue }) => {
     try {
-      const { signedTxXdr } = await kit.signTransaction(transactionXDR);
+      console.log("[WALLET] signTransaction called with XDR length:", transactionXDR.length);
+      const state = getState() as any;
+      const walletType = state.wallet.walletType;
+      const publicKey = state.wallet.publicKey;
+
+      // Ensure kit has a wallet set (essential after page refresh)
+      if (walletType) {
+        console.log("[WALLET] Ensuring kit wallet is set to:", walletType);
+        kit.setWallet(walletType);
+      } else {
+        throw new Error("No wallet connected. Please connect your wallet first.");
+      }
+
+      const network = kit.getNetwork().then(res => res.networkPassphrase).catch(() => "Test SDF Network ; September 2015");
+      const { signedTxXdr } = await kit.signTransaction(transactionXDR, {
+        networkPassphrase: await network,
+        address: publicKey || undefined // Help wallet identify the signer
+      });
+      console.log("[WALLET] kit.signTransaction successful");
       return signedTxXdr;
     } catch (error: any) {
-      
+      console.error("[WALLET] signTransaction error:", error);
       let message = "Failed to sign transaction";
 
       if (error.message?.includes("rejected") || error.message?.includes("denied") || error.message?.includes("declined")) {

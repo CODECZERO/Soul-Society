@@ -1,9 +1,11 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useCallback } from "react"
 import type { WalletType } from "./wallet-types"
-import { walletConnectors } from "./wallet-connectors"
+import { useSelector, useDispatch } from "react-redux"
+import type { RootState, AppDispatch } from "./redux/store"
+import { connectWallet, disconnectWallet, signTransaction as signTx } from "./redux/slices/wallet-slice"
 
 interface WalletContextType {
   isConnected: boolean
@@ -20,59 +22,27 @@ interface WalletContextType {
 const WalletContext = createContext<WalletContextType | undefined>(undefined)
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
-  const [isConnected, setIsConnected] = useState(false)
-  const [publicKey, setPublicKey] = useState<string | null>(null)
-  const [balance, setBalance] = useState(0)
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [walletType, setWalletType] = useState<WalletType | null>(null)
+  const dispatch = useDispatch<AppDispatch>()
+
+  // Read all wallet state from Redux (single source of truth)
+  const { isConnected, publicKey, balance, isConnecting, error, walletType } = useSelector(
+    (state: RootState) => state.wallet
+  )
 
   const connect = useCallback(async (selectedWalletType: WalletType) => {
-    setIsConnecting(true)
-    setError(null)
-
-    try {
-      const connector = walletConnectors[selectedWalletType]
-      if (!connector) {
-        throw new Error("Wallet type not supported")
-      }
-
-      const key = await connector.connect()
-      const keyStr = typeof key === 'string' ? key : String(key)
-      setPublicKey(keyStr)
-      setWalletType(selectedWalletType)
-      setIsConnected(true)
-
-      // Fetch balance
-      const { getAccountBalance } = await import("@/lib/stellar-utils")
-      const bal = await getAccountBalance(keyStr)
-      setBalance(bal)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to connect wallet"
-      setError(message)
-    } finally {
-      setIsConnecting(false)
-    }
-  }, [])
+    await dispatch(connectWallet(selectedWalletType)).unwrap()
+  }, [dispatch])
 
   const disconnect = useCallback(() => {
-    setIsConnected(false)
-    setPublicKey(null)
-    setBalance(0)
-    setError(null)
-    setWalletType(null)
-  }, [])
+    dispatch(disconnectWallet())
+  }, [dispatch])
 
   const signTransaction = useCallback(
     async (tx: string) => {
-      if (!walletType) {
-        throw new Error("No wallet connected")
-      }
-
-      const connector = walletConnectors[walletType]
-      return await connector.signTransaction(tx)
+      const result = await dispatch(signTx(tx)).unwrap()
+      return result
     },
-    [walletType],
+    [dispatch],
   )
 
   return (
@@ -80,10 +50,10 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       value={{
         isConnected,
         publicKey,
-        balance,
+        balance: balance || 0,
         isConnecting,
         error,
-        walletType,
+        walletType: walletType as WalletType | null,
         connect,
         disconnect,
         signTransaction,
@@ -101,3 +71,4 @@ export function useWallet() {
   }
   return context
 }
+

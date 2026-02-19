@@ -121,7 +121,6 @@ export class ReiatsuTokenService {
         })
             .addOperation(contract.call(
                 'mint',
-                new Address(minterKeypair.publicKey()).toScVal(),
                 new Address(toAddress).toScVal(),
                 nativeToScVal(amount, { type: 'i128' })
             ))

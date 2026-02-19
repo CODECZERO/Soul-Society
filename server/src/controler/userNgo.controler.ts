@@ -80,21 +80,10 @@ const singup = AsyncHandler(async (req: Request, res: Response) => {
       password: hashedPassword
     };
 
-    // 4. Register in DB
+    // 4. Register in DB (Includes vault backup with password)
     const savedNGO = await registerNGO(ngoData);
 
-    // 5. Background on-chain backup (Non-blocking)
-    seireiteiVault.put('NGOs', savedNGO.id, {
-      Id: savedNGO.id,
-      Name: savedNGO.name,
-      Email: savedNGO.email,
-      WalletAddress: savedNGO.walletAddress,
-      RegNumber: savedNGO.regNumber,
-      Description: savedNGO.description,
-      CreatedAt: savedNGO.createdAt
-    }).catch(err => console.warn('[VAULT] NGO signup backup failed:', err));
-
-    // 6. Generate Tokens
+    // 5. Generate Tokens
     const { accessToken, refreshToken } = generateTokens(
       savedNGO.id,
       savedNGO.email || "",
@@ -141,9 +130,10 @@ const login = AsyncHandler(async (req: Request, res: Response) => {
     ngo = await findNGOByEmail(email);
     if (!ngo) throw new ApiError(404, 'NGO not found');
 
-    if (!ngo.password) throw new ApiError(401, 'Legacy account or wallet-only auth required');
+    const ngoPassword = ngo.password || ngo.Password;
+    if (!ngoPassword) throw new ApiError(401, 'Legacy account or wallet-only auth required');
 
-    const isPasswordValid = await bcrypt.compare(password, ngo.password);
+    const isPasswordValid = await bcrypt.compare(password, ngoPassword);
     if (!isPasswordValid) throw new ApiError(401, 'Invalid credentials');
 
   } else if (walletAddress) {
@@ -163,15 +153,15 @@ const login = AsyncHandler(async (req: Request, res: Response) => {
     ngo.name || ""
   );
 
-  // Map to frontend expected structure
+  // Map to frontend expected structure (Handle both camelCase and PascalCase from DB)
   const responseData = {
-    Id: ngo.id,
-    NgoName: ngo.name,
-    Email: ngo.email,
-    RegNumber: ngo.regNumber,
-    Description: ngo.description,
-    PublicKey: ngo.walletAddress,
-    createdAt: ngo.createdAt
+    Id: ngo.id || ngo.Id,
+    NgoName: ngo.name || ngo.Name || ngo.NgoName,
+    Email: ngo.email || ngo.Email,
+    RegNumber: ngo.regNumber || ngo.RegNumber,
+    Description: ngo.description || ngo.Description,
+    PublicKey: ngo.walletAddress || ngo.WalletAddress,
+    createdAt: ngo.createdAt || ngo.CreatedAt
   };
 
   return res

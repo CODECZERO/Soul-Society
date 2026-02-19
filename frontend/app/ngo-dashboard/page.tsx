@@ -86,9 +86,9 @@ export default function NGODashboardPage() {
   // Load NGO posts and stats
   useEffect(() => {
     if (isAuthenticated && ngoProfile) {
-      debouncedDispatch(fetchPosts(false), 500)
-      debouncedDispatch(fetchAllDonations(false), 500)
-      debouncedDispatch(fetchNgoStats({ ngoId: ngoProfile.id }), 500)
+      debouncedDispatch(fetchPosts(true), 500)
+      debouncedDispatch(fetchAllDonations(true), 500)
+      debouncedDispatch(fetchNgoStats({ ngoId: ngoProfile.id, force: true }), 500)
     }
   }, [isAuthenticated, ngoProfile, debouncedDispatch])
 
@@ -111,13 +111,14 @@ export default function NGODashboardPage() {
     )
   }
 
-  const ngoPosts = posts.filter(
-    (post) =>
-      post.NgoRef === ngoProfile?.id ||
-      post.NgoRef === (ngoProfile as any)?._id ||
-      (post as any).ngo === ngoProfile?.id ||
-      (post as any).ngo === (ngoProfile as any)?._id
-  )
+  const ngoPosts = posts.filter((post) => {
+    const postNgoId =
+      typeof post.NgoRef === "string"
+        ? post.NgoRef
+        : (post.NgoRef as any)?._id || (post.NgoRef as any)?.id || (post as any).ngo
+
+    return postNgoId === ngoProfile?.id || postNgoId === (ngoProfile as any)?._id
+  })
 
   const tasks = ngoPosts.map(post => {
     const taskDonations = donations.filter(d => d.postIDs === post._id)

@@ -7,12 +7,16 @@ import { getUserProfile } from "@/lib/api-service"
 import { Sword, Zap, Shield, Trophy, History, ShieldCheck } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { useSelector } from "react-redux"
+import { RootState } from "@/lib/redux/store"
 
 export default function ProfilePage() {
     const params = useParams()
     const walletAddr = params.walletAddr as string
     const [profile, setProfile] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const exchangeRate = useSelector((state: RootState) => state.donation.exchangeRate)
 
     useEffect(() => {
         if (walletAddr) {
@@ -28,7 +32,7 @@ export default function ProfilePage() {
                 setProfile(response.data)
             }
         } catch (err) {
-            } finally {
+        } finally {
             setIsLoading(false)
         }
     }
@@ -88,7 +92,24 @@ export default function ProfilePage() {
                                 <Badge className="bg-zinc-900 border-zinc-800 text-zinc-400 rounded-none px-4 py-1 skew-x-[-12deg]">
                                     <span className="skew-x-[12deg] uppercase font-black text-[10px] italic">Sector: Rukongai</span>
                                 </Badge>
+                                {profile.isVerifiedOnChain && (
+                                    <Badge className="bg-orange-600 border-orange-600 text-black rounded-none px-4 py-1 skew-x-[-12deg]">
+                                        <span className="skew-x-[12deg] uppercase font-black text-[10px] italic">Synchronized</span>
+                                    </Badge>
+                                )}
                             </div>
+                            {profile.onChainReiatsu && profile.onChainReiatsu !== "0" && (
+                                <div className="mt-4 ml-6">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 text-[10px] uppercase font-black border-zinc-800 hover:bg-orange-600 hover:text-black hover:border-orange-600 transition-colors rounded-none"
+                                        onClick={() => window.alert('Reiatsu Token metadata copied! Add manually to Freighter using Reiatsu Contract ID.')}
+                                    >
+                                        Add tokens to wallet
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -104,8 +125,15 @@ export default function ProfilePage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-4xl font-black text-white italic tracking-tighter mb-2">
-                                        {profile.totalReiatsu.toLocaleString()} pts
+                                        ₹{Math.round(profile.totalReiatsu * (exchangeRate || 15)).toLocaleString()}
                                     </div>
+                                    {profile.onChainReiatsu && profile.onChainReiatsu !== "0" && (
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-[10px] font-mono text-orange-500 uppercase tracking-widest bg-orange-500/10 px-2 py-0.5 border border-orange-500/20">
+                                                On-Chain: {profile.onChainReiatsu} REI
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="h-1 bg-zinc-900 w-full mb-4">
                                         <div
                                             className="h-full bg-orange-600"
@@ -115,6 +143,12 @@ export default function ProfilePage() {
                                     <p className="text-[10px] text-zinc-600 font-mono uppercase leading-relaxed">
                                         Collective spiritual energy infused into extraction platforms.
                                     </p>
+                                    {profile.isVerifiedOnChain && (
+                                        <div className="mt-4 flex items-center gap-1.5 py-1.5 px-3 bg-zinc-900/50 border border-zinc-800">
+                                            <ShieldCheck className="h-3 w-3 text-orange-600" />
+                                            <span className="text-[9px] font-black text-orange-600 uppercase italic">On-Chain Verified Record</span>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
 
@@ -188,7 +222,7 @@ export default function ProfilePage() {
                                                                 <Zap className="h-3 w-3 text-orange-600" />
                                                             </div>
                                                             <div>
-                                                                <p className="text-white font-black italic">± {infusion.amount} XLM</p>
+                                                                <p className="text-white font-black italic">± ₹{Math.round(infusion.amount * (exchangeRate || 15))}</p>
                                                                 <p className="text-[10px] font-mono text-zinc-600">{new Date(infusion.date).toLocaleDateString()}</p>
                                                             </div>
                                                         </div>

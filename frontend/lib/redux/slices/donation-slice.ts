@@ -66,43 +66,28 @@ export const processDonation = createAsyncThunk(
         xlmAmount = amount / exchangeRate
       }
 
-      // Import and use Stellar utils
-      const { submitEscrowTransaction } = await import("@/lib/stellar-utils")
+      // Import Stellar utils
+      const { submitEscrowTransaction, submitDonationTransaction } = await import("@/lib/stellar-utils")
 
-      // Calculate Escrow Parameters
-      // 50% locked, 50% immediate (but contract handles the split, we send total)
-      // Actually contract takes 50% to a separate bucket?
-      // Contract `create_escrow` logic: 
-      // User sends `total_amount` to contract address? No, `create_escrow` transfers from User to Contract.
-      // We need to pass `locked_amount` which is 50% usually.
-      const lockedAmount = xlmAmount * 0.5;
-      const deadline = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days from now
+      let result: { success: boolean; hash: string; ledger?: number; stellarResult?: any; data?: any };
 
-      // Submit Escrow Transaction
-      const result = await submitEscrowTransaction(
+      // Use escrow-based donation (which now has internal polling for confirmation)
+      result = await submitEscrowTransaction(
         {
           donorPublicKey: publicKey,
           ngoPublicKey: receiverPublicKey,
           totalAmount: xlmAmount,
-          lockedAmount: lockedAmount,
+          lockedAmount: xlmAmount * 0.5,
           taskId: taskId,
-          deadline: deadline
+          deadline: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60) // 30 days
         },
         signTransaction
       )
 
       if (result.success) {
-        // Verify donation with backend - send amount in INR for consistency
-        const inrAmount = currency === 'INR' ? amount : amount * exchangeRate
-        await verifyDonation({
-          TransactionId: result.hash,
-          postID: taskId,
-          Amount: inrAmount, // Send INR amount to backend
-        })
-
         return {
           transactionHash: result.hash,
-          amount: currency === 'INR' ? amount : inrAmount, // Return the original currency amount
+          amount: currency === 'INR' ? amount : (amount * exchangeRate),
           currency: currency,
           taskId,
         }

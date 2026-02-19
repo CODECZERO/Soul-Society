@@ -48,10 +48,22 @@ export class EscrowService {
                 nativeToScVal(taskId, { type: 'string' }),
                 nativeToScVal(BigInt(deadline), { type: 'u64' })
             ))
-            .setTimeout(30)
+            .setTimeout(180)
             .build();
 
-        return tx.toXDR();
+        try {
+            const preparedTx = await this.server.prepareTransaction(tx);
+            return preparedTx.toXDR();
+        } catch (prepareError: any) {
+            const errMsg = prepareError?.message || String(prepareError);
+            if (errMsg.includes('UnreachableCodeReached') || errMsg.includes('InvalidAction')) {
+                throw new Error(
+                    'Escrow contract unavailable — the contract may not be initialized or the WASM binary is outdated. ' +
+                    'Please redeploy and call initialize(). Original: ' + errMsg
+                );
+            }
+            throw prepareError;
+        }
     }
 
     /**
@@ -76,10 +88,11 @@ export class EscrowService {
                 nativeToScVal(taskId, { type: 'string' }),
                 nativeToScVal(proofCid, { type: 'string' })
             ))
-            .setTimeout(30)
+            .setTimeout(180)
             .build();
 
-        return tx.toXDR();
+        const preparedTx = await this.server.prepareTransaction(tx);
+        return preparedTx.toXDR();
     }
 
     /**
@@ -105,10 +118,11 @@ export class EscrowService {
                 new Address(voterPublicKey).toScVal(),
                 nativeToScVal(isScam, { type: 'bool' })
             ))
-            .setTimeout(30)
+            .setTimeout(180)
             .build();
 
-        return tx.toXDR();
+        const preparedTx = await this.server.prepareTransaction(tx);
+        return preparedTx.toXDR();
     }
 
     /**

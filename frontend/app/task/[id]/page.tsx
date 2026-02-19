@@ -14,10 +14,13 @@ import { ipfsImageUrl } from "@/lib/ipfs"
 import { mockTasks } from "@/lib/mock-data"
 import { useWallet } from "@/lib/wallet-context"
 import { submitVoteTransaction } from "@/lib/stellar-utils"
+import { useSelector } from "react-redux"
+import { RootState } from "@/lib/redux/store"
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const { publicKey, signTransaction } = useWallet()
+  const exchangeRate = useSelector((state: RootState) => state.donation.exchangeRate)
   const [isDonateOpen, setIsDonateOpen] = useState(false)
   const [isUploadProofOpen, setIsUploadProofOpen] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
@@ -28,103 +31,94 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
 
+  const loadTaskData = async () => {
+    try {
+      if (!task) setIsLoading(true)
+
+      // Get all posts and find the one matching the ID
+      const postsResponse = await getPosts()
+
+      if (postsResponse.success && postsResponse.data) {
+        // Find the task with matching ID
+        const matchedPost = postsResponse.data.find((p: Post) => p._id === resolvedParams.id)
+
+        if (matchedPost) {
+
+          const needAmount = typeof matchedPost.NeedAmount === 'string'
+            ? parseInt(matchedPost.NeedAmount)
+            : matchedPost.NeedAmount;
+
+          const collectedAmount = matchedPost.CollectedAmount || 0;
+
+          const taskData = {
+            _id: matchedPost._id,
+            id: matchedPost._id,
+            Title: matchedPost.Title,
+            title: matchedPost.Title,
+            NgoRef: matchedPost.NgoRef,
+            ngo: matchedPost.NgoRef,
+            Description: matchedPost.Description,
+            description: matchedPost.Description,
+            NeedAmount: needAmount,
+            goal: needAmount,
+            CollectedAmount: collectedAmount,
+            raised: collectedAmount,
+            ImgCid: matchedPost.ImgCid || '',
+            image: matchedPost.ImgCid || '/placeholder.jpg',
+            Type: matchedPost.Type,
+            category: matchedPost.Type,
+            Location: matchedPost.Location,
+            location: matchedPost.Location,
+            WalletAddr: matchedPost.WalletAddr,
+            createdAt: matchedPost.createdAt,
+            updatedAt: matchedPost.updatedAt,
+          };
+
+          setTask(taskData);
+
+          // Fetch donations for this task
+          try {
+            const donationsResponse = await getDonationsByPost(matchedPost._id)
+            if (donationsResponse.success && donationsResponse.data) {
+              setDonations(donationsResponse.data)
+            }
+          } catch (err) {
+          }
+
+          // Fetch expenses for this task
+          try {
+            const expensesResponse = await getExpensesByPostId(matchedPost._id)
+            if (expensesResponse.success && expensesResponse.data) {
+              const prevTxn = expensesResponse.data.prevTxn
+              if (prevTxn) {
+                setExpenses(Array.isArray(prevTxn) ? prevTxn : [prevTxn])
+              }
+            }
+          } catch (err) {
+          }
+
+          // Fetch PROOFS for this task
+          try {
+            const proofsResponse = await getProofsByTask(matchedPost._id)
+            if (proofsResponse.success && proofsResponse.data) {
+              setProofs(proofsResponse.data)
+            }
+          } catch (err) {
+          }
+        } else {
+          throw new Error("Task not found in API")
+        }
+      }
+    } catch (err) {
+      console.error("Error loading task data:", err);
+      if (!task) setTask(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   // Fetch real data from API
   useEffect(() => {
-    const loadTaskData = async () => {
-      try {
-        setIsLoading(true)
-
-        // Get all posts and find the one matching the ID
-        const postsResponse = await getPosts()
-
-        if (postsResponse.success && postsResponse.data) {
-          // Find the task with matching ID
-          const matchedPost = postsResponse.data.find((p: Post) => p._id === resolvedParams.id)
-
-          if (matchedPost) {
-
-            const needAmount = typeof matchedPost.NeedAmount === 'string'
-              ? parseInt(matchedPost.NeedAmount)
-              : matchedPost.NeedAmount;
-
-            const collectedAmount = matchedPost.CollectedAmount || 0;
-
-            const taskData = {
-              _id: matchedPost._id,
-              id: matchedPost._id,
-              Title: matchedPost.Title,
-              title: matchedPost.Title,
-              NgoRef: matchedPost.NgoRef,
-              ngo: matchedPost.NgoRef,
-              Description: matchedPost.Description,
-              description: matchedPost.Description,
-              NeedAmount: needAmount,
-              goal: needAmount,
-              CollectedAmount: collectedAmount,
-              raised: collectedAmount,
-              ImgCid: matchedPost.ImgCid || '',
-              image: matchedPost.ImgCid || '/placeholder.jpg',
-              Type: matchedPost.Type,
-              category: matchedPost.Type,
-              Location: matchedPost.Location,
-              location: matchedPost.Location,
-              WalletAddr: matchedPost.WalletAddr,
-              createdAt: matchedPost.createdAt,
-              updatedAt: matchedPost.updatedAt,
-            };
-
-            setTask(taskData);
-
-            // Fetch donations for this task
-            try {
-              const donationsResponse = await getDonationsByPost(matchedPost._id)
-              if (donationsResponse.success && donationsResponse.data) {
-                setDonations(donationsResponse.data)
-              }
-            } catch (err) {
-            }
-
-            // Fetch expenses for this task
-            try {
-              const expensesResponse = await getExpensesByPostId(matchedPost._id)
-              if (expensesResponse.success && expensesResponse.data) {
-                const prevTxn = expensesResponse.data.prevTxn
-                if (prevTxn) {
-                  setExpenses(Array.isArray(prevTxn) ? prevTxn : [prevTxn])
-                }
-              }
-            } catch (err) {
-            }
-
-            // Fetch PROOFS for this task
-            try {
-              const proofsResponse = await getProofsByTask(matchedPost._id)
-              if (proofsResponse.success && proofsResponse.data) {
-                setProofs(proofsResponse.data)
-              }
-            } catch (err) {
-            }
-          } else {
-            throw new Error("Task not found in API")
-          }
-        }
-      } catch (err) {
-        // Fallback to mock data
-        let mockTask = mockTasks.find((t) => t.id.toString() === resolvedParams.id)
-        if (!mockTask) {
-          if (!isNaN(Number.parseInt(resolvedParams.id))) {
-            mockTask = mockTasks.find((t) => t.id === Number.parseInt(resolvedParams.id))
-          }
-        }
-        if (!mockTask) {
-          mockTask = mockTasks[0]
-        }
-        setTask(mockTask)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
     loadTaskData()
   }, [resolvedParams.id])
 
@@ -198,7 +192,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                       {task.Title || task.title}
                     </h2>
                     <p className="text-[12px] font-mono text-zinc-600 uppercase tracking-widest leading-none">
-                      DEPLOYED BY: {task.ngo || `DIV-${task.NgoRef?.slice(-2) || 'XX'}`}
+                      DEPLOYED BY: {task.NgoName || task.ngoName || task.NgoRef || task.ngo || 'AidBridge Division'}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -301,7 +295,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                               <div className="min-w-0 flex-1 space-y-3">
                                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                                   <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Amount</span>
-                                  <p className="font-bold text-xl text-amber-400">₹{Number(donation.Amount ?? 0).toLocaleString()}</p>
+                                  <p className="font-bold text-xl text-amber-400">₹{Math.round(Number(donation.Amount ?? 0) * (exchangeRate || 15)).toLocaleString()}</p>
                                 </div>
                                 <StellarPriceDisplay amount={donation.Amount} />
                                 <div className="grid gap-1 text-sm">
@@ -539,7 +533,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                       <span className="text-white font-medium">{donations.length}</span>
                     </div>
                     <div className="pt-2">
-                      <span className="text-xs text-zinc-500 block mb-1">Total Raised</span>
+                      <span className="text-xs text-zinc-500 block mb-1">Total Spiritual Pressure</span>
                       <div className="text-2xl font-bold text-white tracking-tight">₹{formatNumber(task.CollectedAmount || task.raised || 0)}</div>
                     </div>
                   </div>
@@ -554,6 +548,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         isOpen={isDonateOpen}
         onClose={() => {
           setIsDonateOpen(false);
+        }}
+        onSuccess={() => {
+          // Silent refresh of task data
+          loadTaskData();
         }}
         task={{
           ...task,

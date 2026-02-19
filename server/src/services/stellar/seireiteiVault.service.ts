@@ -19,9 +19,16 @@ const VAULT_CONTRACT_ID = process.env.VAULT_CONTRACT_ID || '';
 // Known invalid/placeholder ID to check against
 const INVALID_CONTRACT_ID = 'CC76VNFKSTN5KOR7LHTCDI4QW44V5F5B5N5E5P5S5W5S5X5C5H5U5P5U';
 
+interface CacheEntry {
+    data: any;
+    timestamp: number;
+}
+
 export class SeireiteiVaultService {
     private server = server;
     private adminKeypair = Keypair.fromSecret(STACK_ADMIN_SECRET);
+    private cache: Map<string, CacheEntry> = new Map();
+    private readonly CACHE_TTL = 30000; // 30 seconds
 
     private isContractValid(): boolean {
         if (!VAULT_CONTRACT_ID) return false;
@@ -89,9 +96,10 @@ export class SeireiteiVaultService {
                     // Check if it's a Bad Sequence error
                     const errorString = JSON.stringify(result.errorResult);
                     if (errorString.includes('txBadSeq')) {
-                        logger.warn(`[VAULT] txBadSeq encountered. Retrying... (${retries} left)`);
+                        const jitter = Math.floor(Math.random() * 2000);
+                        logger.warn(`[VAULT] txBadSeq encountered. Retrying in ${2000 + jitter}ms... (${retries} left)`);
                         retries--;
-                        await new Promise(res => setTimeout(res, 2000)); // Wait 2s
+                        await new Promise(res => setTimeout(res, 2000 + jitter));
                         continue;
                     }
                     throw new Error(`Vault storage transaction failed: ${errorString}`);
@@ -118,6 +126,19 @@ export class SeireiteiVaultService {
                 // 3. Update Index (Secondary on-chain record for fast retrieval)
                 if (!skipIndex && collection !== 'System') {
                     await this.updateIndex(collection, id);
+                }
+
+                // 4. Invalidate relevant cache
+                const cacheKey = `${collection}:${id}`;
+                this.cache.delete(cacheKey);
+                // Also invalidate the index cache if it's an index update
+                if (collection.endsWith('_Index')) {
+                    this.cache.delete(cacheKey);
+                } else if (collection !== 'System') {
+                    // If it's a regular put, we might have invalidated a bulk index implicitly
+                    // For safety, clear all index cache related to this collection if it exists
+                    const indexCacheKey = `System:Index_${collection}`;
+                    this.cache.delete(indexCacheKey);
                 }
 
                 return; // Success, exit function
@@ -169,14 +190,39 @@ export class SeireiteiVaultService {
     }
 
     /**
+     * Appends an ID to a set on-chain (e.g. all donation IDs for a donor).
+     */
+    async putToSet(collection: string, setKey: string, id: string) {
+        const existing: string[] = await this.get(collection, setKey) || [];
+        if (!existing.includes(id)) {
+            existing.push(id);
+            await this.put(collection, setKey, existing);
+        }
+    }
+
+    /**
      * Retrieves all records for a collection.
      */
     async getAll(collection: string): Promise<any[]> {
         const indexKey = `Index_${collection}`;
         const ids: string[] = (await this.get('System', indexKey)) || [];
+        return await this.getMany(collection, ids);
+    }
 
-        const results = await Promise.all(ids.map(id => this.get(collection, id)));
-        return results.filter(r => r !== null);
+    /**
+     * Retrieves all items for a given list of IDs with concurrency limiting.
+     */
+    async getMany(collection: string, ids: string[]): Promise<any[]> {
+        const results: any[] = [];
+        const CONCURRENCY_LIMIT = 3; // Conservative to avoid RPC stalls or event loop saturation
+
+        for (let i = 0; i < ids.length; i += CONCURRENCY_LIMIT) {
+            const chunk = ids.slice(i, i + CONCURRENCY_LIMIT);
+            const chunkResults = await Promise.all(chunk.map(id => this.get(collection, id)));
+            results.push(...chunkResults.filter(r => r !== null));
+        }
+
+        return results;
     }
 
     /**
@@ -186,6 +232,13 @@ export class SeireiteiVaultService {
         if (!this.isContractValid()) {
             // Suppress warning on every get to avoid log spam, but return null
             return null;
+        }
+
+        const cacheKey = `${collection}:${id}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+            // logger.debug(`[VAULT] Cache hit for ${cacheKey}`);
+            return cached.data;
         }
 
         const contract = new Contract(VAULT_CONTRACT_ID);
@@ -247,7 +300,11 @@ export class SeireiteiVaultService {
                 ratio: `${decompRatio.toFixed(1)}x`,
             });
 
-            return decompressResult.data;
+            // Cache the result
+            const result = decompressResult.data;
+            this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+
+            return result;
         } catch (e) {
             logger.error(`[VAULT] Decompression failed for ${collection}:${id}:`, e);
             throw new Error(`[VAULT] Decompression failed for ${collection}:${id}: ${e}`);
@@ -560,6 +617,10 @@ export class SeireiteiVaultService {
         const preparedTx = await this.server.prepareTransaction(tx);
         preparedTx.sign(this.adminKeypair);
         const result = await this.server.sendTransaction(preparedTx);
+
+        // Invalidate cache
+        this.cache.delete(`${collection}:${id}`);
+        this.cache.delete(`System:Index_${collection}`);
 
         logger.info(`[VAULT] Deleted ${collection}:${id} - ${result.hash}`);
         return result;

@@ -3,7 +3,8 @@ import AsyncHandler from '../util/asyncHandler.util.js';
 import { ApiError } from '../util/apiError.util.js';
 import { ApiResponse } from '../util/apiResponse.util.js';
 import { getPosts, savePostData } from '../dbQueries/post.Queries.js';
-import { getDonationRelatedToPost } from '../dbQueries/donation.Queries.js';
+import { getAllDonation, getDonationRelatedToPost } from '../dbQueries/donation.Queries.js';
+import { getNGO } from '../dbQueries/ngo.Queries.js';
 import { getXLMtoINRRate } from '../util/exchangeRate.util.js';
 import { ImgFormater } from '../util/ipfs.uitl.js';
 import { registerMission } from '../services/stellar/smartContract.handler.stellar.js';
@@ -41,21 +42,49 @@ const getAllPost = AsyncHandler(async (req: Request, res: Response) => {
     const XLM_TO_INR_RATE = await getXLMtoINRRate();
     console.log(`📊 Using XLM/INR rate: ₹${XLM_TO_INR_RATE}`);
 
-    // Calculate collected amount for each post
+    // Optimization: Bulk fetch ALL donations once and group them
+    const allDonations = await getAllDonation();
+    const donationsMap = new Map<string, any[]>();
+    (allDonations || []).forEach((d: any) => {
+      const pId = d.postIDs || d.PostID || d.postId;
+      if (pId) {
+        const existing = donationsMap.get(pId) || [];
+        existing.push(d);
+        donationsMap.set(pId, existing);
+      }
+    });
+
+    // Calculate collected amount for each post using the map
     const postsWithCollected = await Promise.all(
       postData.map(async (post) => {
         try {
-          const donationsRaw = await getDonationRelatedToPost(post._id);
-          const donations = Array.isArray(donationsRaw) ? donationsRaw : [];
+          // Use the pre-fetched map for donations
+          const donations = donationsMap.get(post._id) || [];
 
           // Sum XLM amounts and convert to INR
-          const collectedXLM = (Array.isArray(donations) ? donations : []).reduce((sum: number, donation: any) => {
+          const collectedXLM = donations.reduce((sum: number, donation: any) => {
             return sum + (donation.Amount || 0);
           }, 0);
           const collectedINR = collectedXLM * XLM_TO_INR_RATE;
 
           // Plain object from Vault (no .toObject() needed)
-          const postObj = { ...post };
+          const postObj: any = { ...post };
+
+          // Hydrate missing WalletAddr and NgoName from NGO data
+          if (postObj.NgoRef) {
+            try {
+              const ngo = await getNGO(postObj.NgoRef);
+              if (ngo) {
+                if (!postObj.WalletAddr && ngo.walletAddress) {
+                  postObj.WalletAddr = ngo.walletAddress;
+                }
+                // Add NGO details for frontend display
+                postObj.NgoName = ngo.NgoName || ngo.name || postObj.NgoName;
+              }
+            } catch (e) {
+              // Silently ignore
+            }
+          }
 
           // Format the image URL if ImgCid exists
           if (post.ImgCid) {

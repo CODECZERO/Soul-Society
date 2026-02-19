@@ -77,9 +77,11 @@ export interface SignupData {
 }
 
 export interface DonationData {
-    TransactionId: string;
-    postID: string;
-    Amount: number;
+    transactionId: string;
+    donorId: string;
+    postId: string;
+    amount: number;
+    escrowId?: string;
 }
 
 export interface PayWallet {

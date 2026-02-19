@@ -16,7 +16,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://freighter.app https://albedo.link; object-src 'none';",
+            value: "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://freighter.app https://albedo.link https://va.vercel-scripts.com; connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 https://va.vercel-scripts.com *.stellar.org *.soroban.org; object-src 'none';",
           },
         ],
       },

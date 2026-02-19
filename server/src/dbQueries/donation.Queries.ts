@@ -23,8 +23,13 @@ const getAllDonation = async () => {
 
 const getDonationRelatedToPost = async (postId: string) => {
   try {
-    // For specific lookups like 'Donations related to post', we use a specialized index
-    return await seireiteiVault.getByIndex('Donations', 'PostID', postId);
+    const ids: string[] = await seireiteiVault.get('Donations_Post_List', postId) || [];
+    if (ids.length === 0) {
+      // Fallback for older data that wasn't indexed in the new list
+      const all = await getAllDonation();
+      return (all || []).filter((d: any) => d.postIDs === postId || d.postID === postId);
+    }
+    return await seireiteiVault.getMany('Donations', ids);
   } catch (error) {
     console.error('Error getting donations for post from blockchain:', error);
     throw error;
@@ -42,14 +47,17 @@ const createDonation = async (donationData: DonationData) => {
       postIDs: donationData.postID,
       Amount: donationData.Amount,
       Donor: donationData.Donor,
+      EscrowId: (donationData as any).EscrowId,
       createdAt: new Date().toISOString()
     };
 
     // Primary save with multiples indexes for fast retrieval
     await seireiteiVault.put('Donations', donationId, data);
     await seireiteiVault.put('Donations_Txn_Index', donationData.TransactionId, donationId);
-    await seireiteiVault.put('Donations_Donor_Index', donationData.Donor, donationId);
-    await seireiteiVault.put('Donations_PostID_Index', donationData.postID as string, donationId);
+
+    // Set-based indexing for many-to-one relationships
+    await seireiteiVault.putToSet('Donations_Donor_List', donationData.Donor, donationId);
+    await seireiteiVault.putToSet('Donations_Post_List', donationData.postID as string, donationId);
 
     // AUTO-JOIN COMMUNITY LOGIC
     // 1. Get the Task (Post) to find the NGO
@@ -73,7 +81,13 @@ const createDonation = async (donationData: DonationData) => {
 
 const getDonationsByDonor = async (walletAddr: string) => {
   try {
-    return await seireiteiVault.getByIndex('Donations', 'Donor', walletAddr);
+    const ids: string[] = await seireiteiVault.get('Donations_Donor_List', walletAddr) || [];
+    if (ids.length === 0) {
+      // Fallback for older data
+      const all = await getAllDonation();
+      return (all || []).filter((d: any) => d.Donor === walletAddr);
+    }
+    return await seireiteiVault.getMany('Donations', ids);
   } catch (error) {
     console.error('Error getting donations by donor from blockchain:', error);
     throw error;

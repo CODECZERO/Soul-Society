@@ -46,11 +46,12 @@ const getLeaderboard = AsyncHandler(async (req: Request, res: Response) => {
     const XLM_TO_INR_RATE = await getXLMtoINRRate();
 
     const leaderboard = ngos.map((ngo: any) => {
+      const ngoId = ngo.id || ngo._id || ngo.Id;
       // Filter posts that belong to this NGO
       const missions = allPosts.filter(
-        (p: any) => p.NgoRef === ngo.id || p.NgoRef === ngo._id
+        (p: any) => p.NgoRef === ngoId || (p as any).ngo === ngoId
       );
-      const completedCount = missions.filter((m: any) => m.Status === 'Completed').length;
+      const completedCount = missions.filter((m: any) => m.Status === 'Completed' || m.status === 'Completed').length;
 
       const totalXLM = missions.reduce(
         (sum: number, m: any) => sum + (m.CollectedAmount || 0),
@@ -59,9 +60,9 @@ const getLeaderboard = AsyncHandler(async (req: Request, res: Response) => {
       const totalINR = Math.round(totalXLM * XLM_TO_INR_RATE);
 
       return {
-        divisionId: ngo.id,
-        name: ngo.name || ngo.NgoName,
-        captain: (ngo.walletAddress || ngo.PublicKey || '').substring(0, 6) + '...',
+        divisionId: ngoId,
+        name: ngo.name || ngo.NgoName || ngo.Name || 'AidBridge Division',
+        captain: (ngo.walletAddress || ngo.WalletAddress || ngo.PublicKey || '').substring(0, 6) + '...',
         missionsCompleted: completedCount,
         totalReiatsuInfused: totalINR,
         rank: 0,
@@ -95,17 +96,17 @@ const getDonorStats = AsyncHandler(async (req: Request, res: Response) => {
 
   try {
     const donations = await getAllDonation();
-    const donorDonations = donations.filter(
-      (d) => d.currentTxn && walletAddr && d.currentTxn.includes(walletAddr.substring(0, 5))
+    const donorDonations = (donations || []).filter(
+      (d) => d.Donor === walletAddr
     );
 
     const totalXLM = donorDonations.reduce((sum: number, d: any) => sum + (d.Amount || 0), 0);
     const missionCount = new Set(donorDonations.map((d) => d.postIDs)).size;
 
     let badge = 'Academy Student';
-    if (totalXLM > 500) badge = 'Captain';
-    else if (totalXLM > 100) badge = 'Lieutenant';
-    else if (totalXLM > 20) badge = 'Assistant Reaper';
+    if (totalXLM >= 500) badge = 'Captain';
+    else if (totalXLM >= 100) badge = 'Lieutenant';
+    else if (totalXLM >= 20) badge = 'Assistant Reaper';
 
     const donorInfo = {
       walletAddr,

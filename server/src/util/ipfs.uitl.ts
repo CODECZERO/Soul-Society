@@ -28,7 +28,11 @@ const ImgFormater = async (cid: string): Promise<string> => {
     }
 
     // Generate a signed URL for the CID
-    // We set a long expiry for better UX, or can be dynamic
+    // Safety check for valid JWT (mock/placeholder check)
+    if (!process.env.PINATA_JWT || process.env.PINATA_JWT === 'mock_jwt_for_internal_testing') {
+      return `https://${process.env.PINATA_GATEWAY}/ipfs/${cid}`;
+    }
+
     const signedUrl = await pinata.gateways.private.createAccessLink({
       cid: cid,
       expires: 3600, // 1 hour

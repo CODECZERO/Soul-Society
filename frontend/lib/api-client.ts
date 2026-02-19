@@ -118,7 +118,9 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Request failed');
+        const error: any = new Error(data.message || 'Request failed');
+        error.errors = data.errors; // Attach detailed validation errors
+        throw error;
       }
 
       return data;

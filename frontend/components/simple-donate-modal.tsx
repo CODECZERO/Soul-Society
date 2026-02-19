@@ -57,7 +57,7 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
   const handleConfirm = async () => {
     const taskId = getTaskId()
     const receiverAddress = task?.WalletAddr || task?.walletAddr || ""
-    
+
     if (!taskId) {
       setError("Task ID not found")
       setStep("error")
@@ -80,12 +80,12 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
     setError("")
 
     try {
-      // Create real Stellar transaction
+      // Create real Stellar transaction (arg order: publicKey, receiver, amount, taskId, signTransaction)
       const result = await submitDonationTransaction(
         publicKey,
+        receiverAddress,
         stellarAmount.toFixed(7),
         taskId,
-        receiverAddress,
         signTransaction
       )
 
@@ -95,9 +95,10 @@ export function SimpleDonateModal({ isOpen, onClose, task }: SimpleDonateModalPr
 
       // Verify donation with backend using payment API
       const verifyResponse = await apiService.verifyDonation({
-        TransactionId: result.hash,
-        postID: taskId,
-        Amount: Number.parseFloat(amount),
+        transactionId: result.hash,
+        postId: taskId,
+        amount: Number.parseFloat(amount),
+        donorId: publicKey,
       })
 
       if (!verifyResponse.success) {

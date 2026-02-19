@@ -21,9 +21,8 @@ export interface NGOData {
  */
 const registerNGO = async (data: NGOData) => {
     try {
-        // Check if already exists by Wallet
-        const allNGOs = await seireiteiVault.getAll('NGOs');
-        const existing = allNGOs.find((n: any) => n.walletAddress === data.walletAddress);
+        // Check if already exists by Wallet using fast index
+        const existing = await seireiteiVault.getByIndex('NGOs', 'Wallet', data.walletAddress);
         if (existing) {
             throw new Error('NGO with this wallet already exists');
         }
@@ -37,6 +36,11 @@ const registerNGO = async (data: NGOData) => {
         };
 
         await seireiteiVault.put('NGOs', ngoId, newNGO);
+        // Add fast indexing for lookups
+        await seireiteiVault.put('NGOs_Wallet_Index', data.walletAddress, ngoId);
+        if (data.email) {
+            await seireiteiVault.put('NGOs_Email_Index', data.email.toLowerCase(), ngoId);
+        }
         // Also sync to Communities immediately
         const community = {
             id: ngoId,
@@ -64,8 +68,21 @@ const registerNGO = async (data: NGOData) => {
  */
 const findNGOByEmail = async (email: string) => {
     try {
+        const searchEmail = email.toLowerCase();
+        const ngo = await seireiteiVault.getByIndex('NGOs', 'Email', searchEmail);
+
+        if (ngo) return ngo;
+
+        // Fallback for older data that wasn't indexed
         const allNGOs = await seireiteiVault.getAll('NGOs');
-        return allNGOs.find((n: any) => n.email === email);
+        const matches = allNGOs.filter((n: any) => {
+            const ngoEmail = (n.email || n.Email || "").toLowerCase();
+            return ngoEmail === searchEmail;
+        });
+
+        if (matches.length === 0) return null;
+        const withPassword = matches.find((n: any) => n.password || n.Password);
+        return withPassword || matches[0];
     } catch (error) {
         console.error('Error finding NGO by email:', error);
         throw error;
@@ -77,9 +94,15 @@ const findNGOByEmail = async (email: string) => {
  */
 const loginNGO = async (walletAddress: string) => {
     try {
+        const ngo = await seireiteiVault.getByIndex('NGOs', 'Wallet', walletAddress);
+        if (ngo) return ngo;
+
+        // Fallback for older data
         const allNGOs = await seireiteiVault.getAll('NGOs');
-        const ngo = allNGOs.find((n: any) => n.walletAddress === walletAddress);
-        return ngo || null;
+        return allNGOs.find((n: any) => {
+            const addr = n.walletAddress || n.WalletAddress;
+            return addr === walletAddress;
+        }) || null;
     } catch (error) {
         console.error('Error logging in NGO:', error);
         throw error;

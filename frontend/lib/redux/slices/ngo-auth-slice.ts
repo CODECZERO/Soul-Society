@@ -16,6 +16,7 @@ interface NGOAuthState {
   ngoProfile: NGOProfile | null
   isLoading: boolean
   error: string | null
+  fieldErrors: Record<string, string> | null
 }
 
 const initialState: NGOAuthState = {
@@ -23,6 +24,7 @@ const initialState: NGOAuthState = {
   ngoProfile: null,
   isLoading: false,
   error: null,
+  fieldErrors: null,
 }
 
 // Helper function to set cookies safely
@@ -85,8 +87,8 @@ export const signupNGO = createAsyncThunk(
     try {
       const { signup } = await import("@/lib/api-service")
       const response = await signup({
-        ngoName: ngoData.ngoName,
-        regNumber: ngoData.regNumber,
+        ngoName: ngoData.name || ngoData.ngoName,
+        regNumber: ngoData.registrationNumber || ngoData.regNumber,
         description: ngoData.description,
         email: ngoData.email,
         phoneNo: ngoData.phoneNo,
@@ -127,9 +129,11 @@ export const signupNGO = createAsyncThunk(
       } else {
         throw new Error(response.message || "Signup failed")
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Signup failed"
-      return rejectWithValue(message)
+    } catch (error: any) {
+      return rejectWithValue({
+        message: error.message || "Signup failed",
+        errors: error.errors
+      })
     }
   },
 )
@@ -234,6 +238,7 @@ const ngoAuthSlice = createSlice({
     },
     clearNGOError: (state) => {
       state.error = null
+      state.fieldErrors = null
     },
     checkNGOCookie: (state) => {
       // Check if NGO is already logged in via cookies
@@ -284,9 +289,22 @@ const ngoAuthSlice = createSlice({
         state.isAuthenticated = true
         state.ngoProfile = action.payload
       })
-      .addCase(signupNGO.rejected, (state, action) => {
+      .addCase(signupNGO.rejected, (state, action: any) => {
         state.isLoading = false
-        state.error = action.payload as string
+        if (action.payload && typeof action.payload === 'object') {
+          state.error = action.payload.message
+          if (action.payload.errors) {
+            const fieldErrors: Record<string, string> = {}
+            action.payload.errors.forEach((err: any) => {
+              // Map 'body.ngoName' to 'ngoName'
+              const field = err.path.split('.').pop()
+              fieldErrors[field] = err.message
+            })
+            state.fieldErrors = fieldErrors
+          }
+        } else {
+          state.error = action.payload as string || "Signup failed"
+        }
       })
       .addCase(checkNGOCookieThunk.pending, (state) => {
         state.isLoading = true

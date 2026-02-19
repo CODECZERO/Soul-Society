@@ -47,7 +47,7 @@ export class DonationService {
         lockedAmount: number;
         taskId: string;
         deadline: number;
-    }): Promise<ApiResponse<{ xdr: string }>> {
+    }): Promise<ApiResponse<{ xdr: string; escrowId: string }>> {
         return apiClient.request('/donations/escrow/xdr', {
             method: 'POST',
             body: JSON.stringify(data),

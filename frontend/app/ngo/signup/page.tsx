@@ -16,9 +16,9 @@ import { signupNGO, clearNGOError } from "@/lib/redux/slices/ngo-auth-slice"
 export default function NGOSignupPage() {
   const router = useRouter()
   const dispatch = useDispatch<AppDispatch>()
-  const { isLoading, error, isAuthenticated } = useSelector((state: RootState) => state.ngoAuth)
+  const { isLoading, error, fieldErrors, isAuthenticated } = useSelector((state: RootState) => state.ngoAuth)
   const { isConnected: walletConnected } = useSelector((state: RootState) => state.wallet)
-  
+
   const [formData, setFormData] = useState({
     ngoName: "",
     regNumber: "",
@@ -41,11 +41,23 @@ export default function NGOSignupPage() {
     }
   }, [isAuthenticated, walletConnected, router])
 
+  // Update local validation errors when backend fieldErrors change
+  useEffect(() => {
+    if (fieldErrors) {
+      setValidationErrors(prev => ({
+        ...prev,
+        ...fieldErrors
+      }))
+    }
+  }, [fieldErrors])
+
   const validateForm = () => {
     const errors: Record<string, string> = {}
 
     if (!formData.ngoName.trim()) {
       errors.ngoName = "NGO name is required"
+    } else if (formData.ngoName.trim().length < 3) {
+      errors.ngoName = "NGO name must be at least 3 characters"
     }
 
     if (!formData.regNumber.trim()) {
@@ -54,6 +66,8 @@ export default function NGOSignupPage() {
 
     if (!formData.description.trim()) {
       errors.description = "Description is required"
+    } else if (formData.description.trim().length < 10) {
+      errors.description = "Description must be at least 10 characters"
     }
 
     if (!formData.email.trim()) {
@@ -70,8 +84,8 @@ export default function NGOSignupPage() {
 
     if (!formData.password) {
       errors.password = "Password is required"
-    } else if (formData.password.length < 6) {
-      errors.password = "Password must be at least 6 characters"
+    } else if (formData.password.length < 8) {
+      errors.password = "Password must be at least 8 characters"
     }
 
     if (!formData.confirmPassword) {
@@ -86,16 +100,16 @@ export default function NGOSignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
 
     dispatch(clearNGOError())
-    
+
     const { confirmPassword, ...signupData } = formData
     const result = await dispatch(signupNGO(signupData))
-    
+
     if (result.type.endsWith('fulfilled')) {
       router.push("/ngo-dashboard")
     }
@@ -107,7 +121,7 @@ export default function NGOSignupPage() {
       ...prev,
       [name]: value
     }))
-    
+
     // Clear validation error for this field
     if (validationErrors[name]) {
       setValidationErrors(prev => ({
@@ -304,8 +318,8 @@ export default function NGOSignupPage() {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full bg-primary hover:bg-primary/90"
                 disabled={isLoading}
               >
@@ -323,8 +337,8 @@ export default function NGOSignupPage() {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link 
-                  href="/ngo/login" 
+                <Link
+                  href="/ngo/login"
                   className="text-primary hover:underline font-medium"
                 >
                   Sign in here

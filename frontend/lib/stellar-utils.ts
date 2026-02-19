@@ -1,5 +1,6 @@
 // Stellar Utils with Real API Integration
 import { getWalletBalance, verifyDonation, createStellarAccount as apiCreateStellarAccount, walletPay, sendPayment, getEscrowXdr, getVoteXdr, getSubmitProofXdr } from './api-service';
+import { kit } from './stellar-kit';
 
 // Mock Stellar SDK classes and functions for frontend compatibility
 const Networks = {
@@ -113,11 +114,15 @@ const Memo = {
 const server = new Server("https://horizon-testnet.stellar.org")
 const networkPassphrase = Networks.TESTNET_NETWORK_PASSPHRASE
 
+/**
+ * Submit a donation payment on Stellar. Argument order matches the working original repo
+ * so the wallet receives a valid XDR and can sign correctly.
+ */
 export async function submitDonationTransaction(
   publicKey: string,
+  receiverPublicKey: string, // NGO's wallet address (destination of payment)
   amount: string,
   taskId: string,
-  receiverPublicKey: string, // NGO's wallet address from post data
   signTransaction: (tx: string) => Promise<string>,
 ) {
   try {
@@ -157,10 +162,14 @@ export async function submitDonationTransaction(
       .setTimeout(180) // 3 minutes timeout
       .build()
 
-    // Step 3: Convert to XDR for signing
+    // Step 3: Convert to XDR for signing (base64 string for wallet)
     const transactionXDR = transaction.toXDR()
-    // Step 4: Sign transaction with Freighter wallet
-    const signedXDR = await signTransaction(transactionXDR)
+    // Step 4: Sign transaction with wallet (Freighter/Albedo/etc.)
+    const signResult = await signTransaction(transactionXDR)
+    const signedXDR = typeof signResult === 'string' ? signResult : (signResult as any)?.signedTxXdr ?? (signResult as any)?.signedTransaction ?? ''
+    if (!signedXDR) {
+      throw new Error('No signed transaction returned from wallet')
+    }
     // Step 5: Parse signed transaction to get hash
     const signedTransaction = StellarSdk.TransactionBuilder.fromXDR(
       signedXDR,
@@ -171,9 +180,10 @@ export async function submitDonationTransaction(
     const result = await server.submitTransaction(signedTransaction)
     // Step 7: Send transaction data to backend for verification and storage
     const donationData = {
-      TransactionId: transactionHash,
-      postID: taskId,
-      Amount: parseFloat(amount),
+      transactionId: transactionHash,
+      postId: taskId,
+      amount: parseFloat(amount),
+      donorId: publicKey, // Mandatory for backend
     }
 
     const response = await verifyDonation(donationData)
@@ -302,45 +312,78 @@ export async function submitEscrowTransaction(
 
 
     // 1. Get XDR from Backend
+    console.log("[STELLAR] Requesting Escrow XDR for task:", data.taskId);
     const response = await getEscrowXdr(data);
     if (!response.success || !response.data?.xdr) {
+      console.error("[STELLAR] XDR Generation Failed:", response);
       throw new Error(response.message || "Failed to generate Escrow XDR");
     }
     const xdr = response.data.xdr;
+    console.log("[STELLAR] XDR Received, length:", xdr.length);
 
     // 2. Sign XDR
-
+    console.log("[STELLAR] Calling signTransaction...");
     const signedXDR = await signTransaction(xdr);
-
+    console.log("[STELLAR] signTransaction result received");
 
     // 3. Submit to Network
     const StellarSdk = await import('@stellar/stellar-sdk');
-    const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+    // Using RPC server for Soroban transactions (Escrow involves Soroban)
+    const sorobanServer = new StellarSdk.rpc.Server('https://soroban-testnet.stellar.org');
 
+    console.log("[STELLAR] Parsing signed XDR...");
     const signedTransaction = StellarSdk.TransactionBuilder.fromXDR(
       signedXDR,
       StellarSdk.Networks.TESTNET
     );
     const transactionHash = signedTransaction.hash().toString('hex');
+    console.log("[STELLAR] Transaction Hash:", transactionHash);
 
+    console.log("[STELLAR] Sending transaction to RPC...");
+    const sendResult = await sorobanServer.sendTransaction(signedTransaction);
+    console.log("[STELLAR] RPC Submission status:", sendResult.status);
 
+    if (sendResult.status === 'ERROR') {
+      console.error("[STELLAR] RPC Submission Error:", sendResult);
+      throw new Error("Transaction submission failed: " + JSON.stringify(sendResult.errorResult));
+    }
 
-    const result = await server.submitTransaction(signedTransaction);
+    // 4. Wait for transaction to be confirmed (Polling)
+    console.log("[STELLAR] Waiting for transaction confirmation...");
+    let txResponse = await sorobanServer.getTransaction(transactionHash);
+    let polls = 0;
+    const maxPolls = 30; // 30 seconds max wait
 
+    // Note: status types from SDK are SUCCESS, FAILED, NOT_FOUND, PENDING
+    while ((txResponse.status as any === 'NOT_FOUND' || txResponse.status as any === 'PENDING') && polls < maxPolls) {
+      await new Promise(res => setTimeout(res, 1000));
+      txResponse = await sorobanServer.getTransaction(transactionHash);
+      polls++;
+      if (polls % 5 === 0) console.log(`[STELLAR] Still waiting... (${polls}s)`);
+    }
 
-    // 4. Create Donation Record (Backend)
-    // The XDR endpoint created the intent, but we need to confirm success to save the record
+    if (txResponse.status !== 'SUCCESS') {
+      console.error("[STELLAR] Transaction failed or timed out:", txResponse);
+      throw new Error(`Transaction failed with status: ${txResponse.status}`);
+    }
+
+    console.log("[STELLAR] Transaction confirmed successfully!");
+
+    // 5. Create Donation Record (Backend)
+    // Now that transaction is SUCCESS, backend verifyDonation will find it on-chain
     await verifyDonation({
-      TransactionId: transactionHash,
-      postID: data.taskId,
-      Amount: data.totalAmount, // Record full amount
+      transactionId: transactionHash,
+      postId: data.taskId,
+      amount: data.totalAmount, // Record full amount
+      donorId: data.donorPublicKey, // Mandatory for backend
+      escrowId: response.data.escrowId, // Pass the unique ID generated by backend
     });
 
     return {
       success: true,
       hash: transactionHash,
-      ledger: result.ledger,
-      stellarResult: result,
+      ledger: (txResponse as any).latestLedger || (txResponse as any).ledger || 0,
+      stellarResult: txResponse,
     };
 
   } catch (error) {
@@ -434,7 +477,53 @@ export async function submitProofTransaction(
     return { success: true, hash: transactionHash };
 
   } catch (error) {
+    throw error;
+  }
+}
 
+/**
+ * Creates a trustline for the REI asset.
+ */
+export async function addTrustline(
+  publicKey: string,
+  signTransactionThunk: (txXdr: string) => Promise<any>
+) {
+  try {
+    const StellarSdk = await import('@stellar/stellar-sdk');
+    const issuer = process.env.NEXT_PUBLIC_REI_ISSUER || "GB5CLXT47BNHNXLR67QSNB5FBM5NTSFSO6IUJCMSO6BY6ZYBTYJGY566";
+
+    const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+    const account = await server.loadAccount(publicKey);
+    const asset = new StellarSdk.Asset('REI', issuer);
+
+    const transaction = new StellarSdk.TransactionBuilder(account, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: StellarSdk.Networks.TESTNET,
+    })
+      .addOperation(
+        StellarSdk.Operation.changeTrust({
+          asset: asset,
+        })
+      )
+      .setTimeout(180)
+      .build();
+
+    const transactionXDR = transaction.toXDR();
+    const resultXdr = await signTransactionThunk(transactionXDR);
+
+    // signTransaction thunk returns { payload: signedXdr } or just signedXdr depending on dispatch
+    const signedXDR = typeof resultXdr === 'string' ? resultXdr : resultXdr?.payload || resultXdr;
+
+    if (!signedXDR) throw new Error("Failed to sign trustline transaction");
+
+    const signedTransaction = StellarSdk.TransactionBuilder.fromXDR(
+      signedXDR,
+      StellarSdk.Networks.TESTNET
+    );
+
+    return await server.submitTransaction(signedTransaction);
+  } catch (error) {
+    console.error("[STELLAR] Trustline failed:", error);
     throw error;
   }
 }

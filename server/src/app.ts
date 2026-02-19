@@ -12,26 +12,26 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map(origin => origin.trim())
+  : ['http://localhost:3000'];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
+
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         "script-src": ["'self'", "'unsafe-inline'", "https://va.vercel-scripts.com"],
-        "connect-src": ["'self'", "https://va.vercel-scripts.com", "*.stellar.org", "*.soroban.org"],
+        "connect-src": ["'self'", "http://localhost:8000", "http://127.0.0.1:8000", "https://va.vercel-scripts.com", "*.stellar.org", "*.soroban.org"],
       },
     },
-  })
-);
-if (!process.env.FRONTEND_URL) {
-  throw new Error('FRONTEND_URL is not defined in environment variables');
-}
-
-app.use(
-  cors({
-    origin: ['https://soul-society-three.vercel.app', 'http://localhost:3000', 'http://localhost:5173'],
-    credentials: true,
   })
 );
 
