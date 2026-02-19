@@ -8,8 +8,8 @@ import { UploadProofModal } from "@/components/upload-proof-modal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { StellarPriceDisplay } from "@/components/stellar-price-display"
-import { Heart, Share2, MapPin, Loader2, ShieldCheck, Activity, Database, FileCheck, ThumbsUp, ThumbsDown } from "lucide-react"
-import { getPosts, getDonationsByPost, getExpensesByPostId, getProofsByTask, voteOnProof, type Post, type Donation } from "@/lib/api-service"
+import { Heart, Share2, MapPin, Loader2, ShieldCheck, Activity, Database, FileCheck, ThumbsUp, ThumbsDown, CheckCircle } from "lucide-react"
+import { getPosts, getDonationsByPost, getExpensesByPostId, getProofsByTask, voteOnProof, voteOnTask, getVotesForTask, type Post, type Donation } from "@/lib/api-service"
 import { ipfsImageUrl } from "@/lib/ipfs"
 import { mockTasks } from "@/lib/mock-data"
 import { useWallet } from "@/lib/wallet-context"
@@ -158,6 +158,106 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   const progressPercent = calculateProgress();
+
+  // --- Authenticity Voting Component ---
+  const AuthCheckSection = ({ taskId }: { taskId: string }) => {
+    const [votes, setVotes] = useState({ realCount: 0, scamCount: 0 });
+    const [hasVoted, setHasVoted] = useState(false);
+    const [isVoting, setIsVoting] = useState(false);
+
+    useEffect(() => {
+      const loadVotes = async () => {
+        try {
+          const res = await getVotesForTask(taskId);
+          if (res.success && res.data) {
+            setVotes({
+              realCount: res.data.realCount || 0,
+              scamCount: res.data.scamCount || 0
+            });
+            if (publicKey && res.data.votes) {
+              const alreadyVoted = res.data.votes.some((v: any) => v.voter === publicKey);
+              setHasVoted(alreadyVoted);
+            }
+          }
+        } catch (err) {
+          console.error("Error loading authenticity votes:", err);
+        }
+      };
+      loadVotes();
+    }, [taskId, publicKey]);
+
+    const handleAuthenticityVote = async (isScam: boolean) => {
+      if (!publicKey) return alert("Please connect your wallet to vote");
+      if (hasVoted) return alert("You have already voted on this mission");
+
+      setIsVoting(true);
+      try {
+        // Step 1: On-Chain Record (Authenticity is simplified to backend + wallet check for this build)
+        // Note: For hackathon speed, we use the backend vote which records the intent and wallet address
+        const res = await voteOnTask({
+          taskId,
+          voterWallet: publicKey,
+          isScam,
+          reason: isScam ? "Community flagged as suspicious" : "Verified by community member"
+        });
+
+        if (res.success) {
+          setHasVoted(true);
+          setVotes(prev => ({
+            realCount: isScam ? prev.realCount : prev.realCount + 1,
+            scamCount: isScam ? prev.scamCount + 1 : prev.scamCount
+          }));
+          alert(isScam ? "Mission flagged. Our team will investigate." : "Thank you for verifying this mission!");
+        }
+      } catch (err: any) {
+        alert("Voting failed: " + (err.message || "Unknown error"));
+      } finally {
+        setIsVoting(false);
+      }
+    };
+
+    return (
+      <div className="p-4 bg-zinc-900/80 border border-zinc-800 rounded-lg space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-amber-500" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Authenticity Check</span>
+          </div>
+          <div className="flex gap-3 text-[10px] font-mono font-bold text-zinc-500 uppercase">
+            <span className="text-green-500">REAL: {votes.realCount}</span>
+            <span className="text-red-500">SCAM: {votes.scamCount}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={hasVoted || isVoting || !publicKey}
+            onClick={() => handleAuthenticityVote(false)}
+            className={`border-green-900/20 text-green-500 hover:bg-green-900/10 text-[10px] uppercase font-bold rounded-none h-8 ${hasVoted ? 'opacity-50 grayscale' : ''}`}
+          >
+            {hasVoted && !isVoting ? <CheckCircle className="h-3 w-3 mr-1" /> : <ThumbsUp className="h-3 w-3 mr-1" />}
+            Verify
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={hasVoted || isVoting || !publicKey}
+            onClick={() => handleAuthenticityVote(true)}
+            className={`border-red-900/20 text-red-500 hover:bg-red-900/10 text-[10px] uppercase font-bold rounded-none h-8 ${hasVoted ? 'opacity-50 grayscale' : ''}`}
+          >
+            <ThumbsDown className="h-3 w-3 mr-1" /> Flag Scam
+          </Button>
+        </div>
+        {!publicKey && (
+          <p className="text-[8px] text-zinc-600 text-center font-mono italic">
+            Connect wallet to vote on authenticity
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -503,6 +603,9 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                     <span className="text-xl font-bold text-amber-400">₹{Math.max(0, (task.NeedAmount || task.goal || 0) - (task.CollectedAmount || task.raised || 0)).toLocaleString()}</span>
                   </div>
                 </div>
+
+                {/* Authenticity Voting */}
+                <AuthCheckSection taskId={task._id || task.id} />
 
                 <div className="space-y-2">
                   <Button
