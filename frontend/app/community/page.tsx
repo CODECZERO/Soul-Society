@@ -47,10 +47,7 @@ export default function CommunityPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {(ngoAuthenticated && ngoProfile
-                            ? communities.filter(c => (c.id || c._id) === ngoProfile.id)
-                            : communities
-                        ).map((community, idx) => (
+                        {communities.map((community, idx) => (
                             <Link href={`/community/${community.id || community._id}`} key={community.id || community._id || idx} className="group block h-full">
                                 <Card className="h-full bg-zinc-900/50 border-zinc-800 group-hover:border-amber-500/40 transition-all rounded-lg overflow-hidden flex flex-col">
                                     {/* Image Header */}
