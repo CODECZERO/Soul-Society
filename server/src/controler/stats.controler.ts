@@ -97,13 +97,6 @@ const getDonorStats = AsyncHandler(async (req: Request, res: Response) => {
 
   try {
     const donations = await getAllDonation();
-    logger.info(`[STATS] Found ${donations ? donations.length : 0} total donations in Vault.`);
-
-    if (donations && donations.length > 0) {
-      logger.info(`[STATS] Sample Donor from Vault: "${donations[0].Donor}"`);
-      logger.info(`[STATS] Incoming walletAddr: "${walletAddr}"`);
-    }
-
     const donorDonations = (donations || []).filter(
       (d) => {
         // Use case-insensitive comparison for safety with wallet addresses
@@ -111,7 +104,6 @@ const getDonorStats = AsyncHandler(async (req: Request, res: Response) => {
         return match;
       }
     );
-    logger.info(`[STATS] Found ${donorDonations.length} matches for donor ${walletAddr}`);
 
     // Force fresh data by disabling ETags for this response
     res.set('ETag', 'false');
