@@ -6,7 +6,7 @@
   [![Stellar](https://img.shields.io/badge/Stellar-7D00FF?logo=stellar&logoColor=white)](https://stellar.org/)
   [![Next.js](https://img.shields.io/badge/Next.js-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
   [![Soroban](https://img.shields.io/badge/Soroban-Testnet-blue)](https://soroban.stellar.org/)
-  [![CI/CD](https://github.com/yourusername/soul-society/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/soul-society/actions)
+  [![Stellar App CI](https://github.com/CODECZERO/Soul-Society/actions/workflows/ci.yml/badge.svg)](https://github.com/CODECZERO/Soul-Society/actions/workflows/ci.yml)
 
   <img src="docs/assets/screenshots/landing_page.png" alt="Soul-Society Dashboard" width="100%" />
 </div>

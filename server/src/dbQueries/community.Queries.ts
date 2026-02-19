@@ -135,18 +135,23 @@ const getAllCommunities = async () => {
         if (missingNgos.length > 0) {
             console.log(`[VAULT] Backfilling ${missingNgos.length} missing communities...`);
             for (const ngo of missingNgos) {
+                const actualId = ngo.id || ngo.Id;
+                if (!actualId) {
+                    console.warn(`[VAULT] NGO missing id and Id, skipping backfill:`, ngo);
+                    continue;
+                }
                 const newCommunity = {
-                    id: ngo.id,
+                    id: actualId,
                     name: ngo.name || ngo.NgoName || ngo.Name || "AidBridge Division",
                     description: ngo.description || ngo.Description || "A community dedicated to making a positive impact.",
                     image: ngo.image || ngo.ImgCid || "https://placehold.co/400",
                     memberCount: 0,
                     members: [],
                     totalFundsRaised: 0,
-                    createdAt: ngo.createdAt || new Date().toISOString(),
+                    createdAt: ngo.createdAt || ngo.CreatedAt || new Date().toISOString(),
                     taskCount: 0
                 };
-                await seireiteiVault.put('Communities', ngo.id, newCommunity);
+                await seireiteiVault.put('Communities', actualId, newCommunity);
                 communities.push(newCommunity);
             }
         }
