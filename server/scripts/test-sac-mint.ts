@@ -68,10 +68,10 @@ async function testMint() {
             console.error(`Error Result XDR: ${(result as any).errorResult}`);
         }
 
-        if (result.status === 'PENDING' || result.status === 'SUCCESS') {
+        if ((result.status as any) === 'PENDING' || (result.status as any) === 'SUCCESS') {
             console.log(`Waiting for confirmation...`);
             let txResponse = await server.getTransaction(result.hash);
-            while (txResponse.status === 'NOT_FOUND' || txResponse.status === 'PENDING') {
+            while ((txResponse.status as any) === 'NOT_FOUND' || (txResponse.status as any) === 'PENDING') {
                 await new Promise((resolve) => setTimeout(resolve, 1000));
                 txResponse = await server.getTransaction(result.hash);
             }
