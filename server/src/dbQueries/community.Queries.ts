@@ -121,10 +121,48 @@ const joinCommunity = async (communityId: string, walletAddr: string) => {
 
 /**
  * Get all Communities.
+ * Enhanced to backfill from NGOs if needed (Auto-Sync).
  */
 const getAllCommunities = async () => {
     try {
-        return await seireiteiVault.getAll('Communities');
+        const communities = await seireiteiVault.getAll('Communities');
+        const ngos = await seireiteiVault.getAll('NGOs');
+
+        // Check if any NGO is missing a Community entry
+        const communityIds = new Set(communities.map((c: any) => c.id));
+        const missingNgos = ngos.filter((n: any) => !communityIds.has(n.id));
+
+        if (missingNgos.length > 0) {
+            console.log(`[VAULT] Backfilling ${missingNgos.length} missing communities...`);
+            for (const ngo of missingNgos) {
+                const newCommunity = {
+                    id: ngo.id,
+                    name: ngo.name || ngo.NgoName || ngo.Name || "AidBridge Division",
+                    description: ngo.description || ngo.Description || "A community dedicated to making a positive impact.",
+                    image: ngo.image || ngo.ImgCid || "https://placehold.co/400",
+                    memberCount: 0,
+                    members: [],
+                    totalFundsRaised: 0,
+                    createdAt: ngo.createdAt || new Date().toISOString(),
+                    taskCount: 0
+                };
+                await seireiteiVault.put('Communities', ngo.id, newCommunity);
+                communities.push(newCommunity);
+            }
+        }
+
+        // Fetch task counts for each community
+        const allPosts = await seireiteiVault.getAll('Posts');
+        const enrichedCommunities = communities.map((c: any) => {
+            const tasks = allPosts.filter((p: any) => p.ngo === c.id || p.NgoRef === c.id);
+            return {
+                ...c,
+                tasks: tasks,
+                taskCount: tasks.length
+            };
+        });
+
+        return enrichedCommunities;
     } catch (error) {
         console.error('Error fetching communities:', error);
         throw error;
@@ -140,9 +178,15 @@ const getCommunityDetails = async (communityId: string) => {
         if (!community) return null;
 
         // Fetch Tasks for this Community (NGO)
-        // We can query Posts by 'ngo' or 'NgoRef'
+        const ngoData = await seireiteiVault.get('NGOs', communityId);
+        const ngoWallet = ngoData?.walletAddress || ngoData?.WalletAddress;
+
         const allPosts = await seireiteiVault.getAll('Posts');
-        const tasks = allPosts.filter((p: any) => p.ngo === communityId || p.NgoRef === communityId);
+        const tasks = allPosts.filter((p: any) =>
+            p.ngo === communityId ||
+            p.NgoRef === communityId ||
+            (ngoWallet && (p.Author === ngoWallet || p.walletAddress === ngoWallet))
+        );
 
         return { ...community, tasks };
     } catch (error) {
