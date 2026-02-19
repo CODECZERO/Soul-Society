@@ -123,6 +123,22 @@ export class StellarService {
     async verifyProof(hash: string): Promise<ApiResponse<any>> {
         return apiClient.request(`/community/proof/verify/${hash}`);
     }
+
+    async voteOnTask(data: {
+        taskId: string;
+        voterWallet: string;
+        isScam: boolean;
+        reason?: string;
+    }): Promise<ApiResponse<any>> {
+        return apiClient.request('/community/vote', {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    }
+
+    async getVotesForTask(taskId: string): Promise<ApiResponse<any>> {
+        return apiClient.request(`/community/votes/${taskId}`);
+    }
 }
 
 export const stellarService = new StellarService();
