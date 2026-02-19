@@ -64,8 +64,8 @@ async function testMint() {
         const result = await server.sendTransaction(preparedTx);
         console.log(`Send Status: ${result.status}`);
 
-        if (result.errorResultXdr) {
-            console.error(`Error Result XDR: ${result.errorResultXdr}`);
+        if ((result as any).errorResult) {
+            console.error(`Error Result XDR: ${(result as any).errorResult}`);
         }
 
         if (result.status === 'PENDING' || result.status === 'SUCCESS') {
