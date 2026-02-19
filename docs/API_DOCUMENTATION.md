@@ -187,6 +187,38 @@ Authorization: Bearer <your_jwt_token>
 
 ---
 
+## Community Hub & Governance
+
+### Get All Communities
+- **GET** `/community/all`
+- **Description**: Retrieve all communities (includes NGO data backfill)
+- **Response**: Array of community objects with `taskCount`
+
+### Get Community Details
+- **GET** `/community/:id`
+- **Description**: Retrieve detailed community info and associated tasks
+- **Response**: Community object with `tasks` array
+
+### Vote on Task Authenticity
+- **POST** `/community/vote`
+- **Description**: Submit a community vote on mission validity
+- **Body**:
+```json
+{
+  "taskId": "task_id",
+  "voterWallet": "voter_public_key",
+  "isScam": false,
+  "reason": "Verified location"
+}
+```
+
+### Get Task Votes
+- **GET** `/community/votes/:taskId`
+- **Description**: Retrieve vote totals for a specific mission
+- **Response**: Object with `realCount` and `scamCount`
+
+---
+
 ## Error Responses
 
 All endpoints may return the following error responses:
